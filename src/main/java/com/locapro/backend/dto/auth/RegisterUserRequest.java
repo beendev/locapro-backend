@@ -1,120 +1,51 @@
 package com.locapro.backend.dto.auth;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.*;
+
 import java.time.LocalDate;
 
-public class RegisterUserRequest {
+public record RegisterUserRequest(
 
-    @NotBlank
-    private String prenom;
+        @NotBlank(message = "Le prénom est obligatoire")
+        String prenom,
 
-    @NotBlank
-    private String nom;
+        @NotBlank(message = "Le nom est obligatoire")
+        String nom,
 
-    @Email
-    @NotBlank
-    private String email;
+        @Email(message = "Format d'email invalide")
+        @NotBlank(message = "L'email est obligatoire")
+        String email,
 
-    @NotBlank
-    private String motDePasse; // sera hashé côté service
+        @NotBlank(message = "Le mot de passe est obligatoire")
+        @Pattern(
+                // Nouvelle Regex "Tout Terrain" :
+                // ^                 : Début
+                // (?=.*[0-9])       : Au moins un chiffre
+                // (?=.*[a-z])       : Au moins une minuscule
+                // (?=.*[A-Z])       : Au moins une majuscule
+                // (?=.*[^a-zA-Z0-9]): Au moins un caractère "spécial" (tout sauf lettre/chiffre)
+                // .{8,}             : 8 caractères min
+                // $                 : Fin
+                regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$",
+                message = "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial."
+        )
+        String motDePasse,
 
-    @Past(message = "La date de naissance doit être dans le passé")
-    private LocalDate dateNaissance; // optionnelle ? -> si tu veux, retire @Past
+        @Past(message = "La date de naissance doit être dans le passé")
+        LocalDate dateNaissance,
 
-    // Affiché d'office mais non obligatoire
-    private String numeroIpi;// nullable
+        // Optionnel
+        String numeroIpi,
 
-    private String rue;
-    private String numero;
-    private String boite;
-    private String codePostal;
-    private String ville;
-    private String pays;
-    private Double latitude;
-    private Double longitude;
+        // Adresse
+        String rue,
+        String numero,
+        String boite,
+        String codePostal,
+        String ville,
+        String pays,
 
-    // Getters / Setters
-    public String getPrenom() { return prenom; }
-    public void setPrenom(String prenom) { this.prenom = prenom; }
-
-    public String getNom() { return nom; }
-    public void setNom(String nom) { this.nom = nom; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-
-    public String getMotDePasse() { return motDePasse; }
-    public void setMotDePasse(String motDePasse) { this.motDePasse = motDePasse; }
-
-    public LocalDate getDateNaissance() { return dateNaissance; }
-    public void setDateNaissance(LocalDate dateNaissance) { this.dateNaissance = dateNaissance; }
-
-    public String getNumeroIpi() { return numeroIpi; }
-    public void setNumeroIpi(String numeroIpi) { this.numeroIpi = numeroIpi; }
-
-    public String getRue() {
-        return rue;
-    }
-
-    public void setRue(String rue) {
-        this.rue = rue;
-    }
-
-    public String getNumero() {
-        return numero;
-    }
-
-    public void setNumero(String numero) {
-        this.numero = numero;
-    }
-
-    public String getBoite() {
-        return boite;
-    }
-
-    public void setBoite(String boite) {
-        this.boite = boite;
-    }
-
-    public String getCodePostal() {
-        return codePostal;
-    }
-
-    public void setCodePostal(String codePostal) {
-        this.codePostal = codePostal;
-    }
-
-    public String getVille() {
-        return ville;
-    }
-
-    public void setVille(String ville) {
-        this.ville = ville;
-    }
-
-    public String getPays() {
-        return pays;
-    }
-
-    public void setPays(String pays) {
-        this.pays = pays;
-    }
-
-    public Double getLatitude() {
-        return latitude;
-    }
-
-    public void setLatitude(Double latitude) {
-        this.latitude = latitude;
-    }
-
-    public Double getLongitude() {
-        return longitude;
-    }
-
-    public void setLongitude(Double longitude) {
-        this.longitude = longitude;
-    }
-}
+        Double latitude,
+        Double longitude,
+        String telephone
+) {}

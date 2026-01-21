@@ -32,6 +32,9 @@ public class AgenceInvitationEntity {
     @Column(name = "statut", nullable = false)
     private InvitationStatut statut;
 
+    @Column(name = "responded_at")
+    private OffsetDateTime respondedAt;
+
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private OffsetDateTime createdAt;
 
@@ -89,5 +92,13 @@ public class AgenceInvitationEntity {
 
     public void setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public OffsetDateTime getRespondedAt() {
+        return respondedAt;
+    }
+
+    public void setRespondedAt(OffsetDateTime respondedAt) {
+        this.respondedAt = respondedAt;
     }
 }

@@ -9,4 +9,6 @@ public interface ProprietaireBienRepository extends JpaRepository<ProprietaireBi
     Optional<ProprietaireBienEntity> findFirstByBienIdAndEnabledTrueOrderByIdAsc(Long bienId);
 
     boolean existsByBienIdAndProprietaireUtilisateurIdAndEnabledTrue(Long bienId, Long currentUserId);
+
+    Optional<ProprietaireBienEntity> findFirstByBienIdAndEnabledTrue(Long bienId);
 }

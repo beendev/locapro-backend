@@ -1,22 +1,31 @@
 package com.locapro.backend.dto.bien;
 
 public record BienResponse(
-
         Long id,
         String nomReference,
         String typeBien,
         String sousType,
         String libelleUnite,
         String codePublic,
+        boolean estUniteLocative,
+        Long portefeuilleId,
 
-        // Adresse affichée
+        // Adresse
         String rue,
         String numero,
-        String boiteAdresse,   // boîte du parent (immeuble / maison)
-        String boiteUnite,     // boîte de l’unité (boite_unite)
+        String boiteAdresse,
+        String boiteUnite,
         String codePostal,
         String ville,
         String pays,
+
+        // 👇 AJOUTS ICI : Coordonnées GPS
+        Double latitude,
+        Double longitude,
+
+        // 👇 AJOUTS ICI : Infos Admin
+        String statut,
+        String notes,
 
         // Parent
         Long parentId,
@@ -29,7 +38,7 @@ public record BienResponse(
         DetailsBureauResponse detailsBureau,
         DetailsParkingResponse detailsParking,
 
-        // Propriétaire
-        ProprietaireBienResponse proprietaire
-
+        // Propriétaires
+        ProprietaireBienResponse proprietaire,
+        ProprietaireBienResponse proprietaireParent
 ) {}

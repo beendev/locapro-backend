@@ -1,8 +1,10 @@
 package com.locapro.backend.dto.auth;
 
-// Ce DTO sert à transporter les infos du Service vers le Controller
+import com.locapro.backend.dto.user.UserResponse;
+
 public record LoginResult(
         String accessToken,
         long accessExpiresInSeconds,
-        String refreshTokenValue // <--- IL DOIT ÊTRE LÀ ! (Pour que le controller puisse créer le cookie)
+        String refreshTokenValue,
+        UserResponse user // 👈 AJOUTÉ
 ) {}

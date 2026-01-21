@@ -15,6 +15,9 @@ public interface EntrepriseRepository extends JpaRepository<EntrepriseEntity, Lo
 
     @Modifying
     @Query("update EntrepriseEntity e set e.enabled = false where e.proprietaire.id = :ownerUserId and e.enabled = true")
-    int disableCurrentForUser(Long ownerUserId);
+    void disableCurrentForUser(Long ownerUserId);
+
+    @Query("SELECT e.id FROM EntrepriseEntity e WHERE e.proprietaire.id = :userId AND e.enabled = true")
+    Optional<Long> findIdByUserIdAndEnabledTrue(Long userId);
 }
 

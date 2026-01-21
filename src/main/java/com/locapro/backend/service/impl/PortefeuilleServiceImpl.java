@@ -1,12 +1,15 @@
 package com.locapro.backend.service.impl;
 
+import com.locapro.backend.dto.bien.BienResponse;
 import com.locapro.backend.dto.common.ApiMessageResponse;
 import com.locapro.backend.dto.portefeuille.PortefeuilleAjouterMembreRequest;
 import com.locapro.backend.dto.portefeuille.PortefeuilleCreateRequest;
+import com.locapro.backend.dto.portefeuille.PortefeuilleMembreResponse;
 import com.locapro.backend.dto.portefeuille.PortefeuilleResponse;
 import com.locapro.backend.entity.*;
 import com.locapro.backend.exception.ForbiddenException;
 import com.locapro.backend.exception.NotFoundException;
+import com.locapro.backend.mapper.BienResponseMapper;
 import com.locapro.backend.mapper.PortefeuilleMapper;
 import com.locapro.backend.mapper.PortefeuilleMembreMapper;
 import com.locapro.backend.repository.PortefeuilleMembreRepository;
@@ -35,6 +38,7 @@ public class PortefeuilleServiceImpl implements PortefeuilleService {
     private final PortefeuilleMapper portefeuilleMapper;
     private final PortefeuilleMembreMapper portefeuilleMembreMapper;
     private final BienRepository bienRepository;
+    private final BienResponseMapper bienResponseMapper;
 
     public PortefeuilleServiceImpl(
             UtilisateurAgenceRepository utilisateurAgenceRepository,
@@ -43,7 +47,7 @@ public class PortefeuilleServiceImpl implements PortefeuilleService {
             PortefeuilleMembreRepository portefeuilleMembreRepository,
             PortefeuilleMapper portefeuilleMapper,
             PortefeuilleMembreMapper portefeuilleMembreMapper,
-            BienRepository bienRepository
+            BienRepository bienRepository, BienResponseMapper bienResponseMapper
     ) {
         this.utilisateurAgenceRepository = utilisateurAgenceRepository;
         this.utilisateurRepository = utilisateurRepository;
@@ -52,6 +56,7 @@ public class PortefeuilleServiceImpl implements PortefeuilleService {
         this.portefeuilleMapper = portefeuilleMapper;
         this.portefeuilleMembreMapper = portefeuilleMembreMapper;
         this.bienRepository = bienRepository;
+        this.bienResponseMapper = bienResponseMapper;
     }
 
     @Override
@@ -107,7 +112,7 @@ public class PortefeuilleServiceImpl implements PortefeuilleService {
 
         return membres.stream()
                 .map(PortefeuilleMembreEntity::getPortefeuille)
-                .filter(p -> p.isEnabled())
+                .filter(PortefeuilleEntity::isEnabled)
                 .map(portefeuilleMapper::toResponse)
                 .toList();
     }
@@ -282,6 +287,72 @@ public class PortefeuilleServiceImpl implements PortefeuilleService {
         portefeuilleMembreRepository.save(membre);
 
         return new ApiMessageResponse("L'utilisateur a été retiré du portefeuille.");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BienResponse> listerBiensDuPortefeuille(Long portefeuilleId, Long userId) {
+        // Sécurité
+        if (!portefeuilleMembreRepository.existsByPortefeuilleIdAndUtilisateurIdAndEnabledTrue(portefeuilleId, userId)) {
+            throw new ForbiddenException("Accès refusé au portefeuille.");
+        }
+
+        // Récupération SQL
+        List<BienEntity> biens = bienRepository.findByPortefeuilleIdAndEnabledTrue(portefeuilleId);
+
+        // Mapping LÉGER (Summary)
+        return biens.stream()
+                .map(bienResponseMapper::toBienSummary) // 👈 Appel direct au nouveau mapper
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BienResponse> listerBiensDisponibles(Long userId) {
+        UtilisateurAgenceEntity lien = utilisateurAgenceRepository
+                .findFirstByUtilisateurIdAndEnabledTrue(userId)
+                .orElseThrow(() -> new ForbiddenException("Aucune agence."));
+
+        // Récupération SQL
+        List<BienEntity> orphelins = bienRepository
+                .findByAgenceIdAndPortefeuilleIdIsNullAndEnabledTrueAndEstUniteLocativeTrue(lien.getAgence().getId());
+
+        // Mapping LÉGER (Summary)
+        return orphelins.stream()
+                .map(bienResponseMapper::toBienSummary) // 👈 Appel direct au nouveau mapper
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PortefeuilleMembreResponse> listerMembres(Long portefeuilleId, Long currentUserId) {
+        // 1. Vérifier que je suis membre
+        if (!portefeuilleMembreRepository.existsByPortefeuilleIdAndUtilisateurIdAndEnabledTrue(portefeuilleId, currentUserId)) {
+            throw new ForbiddenException("Accès refusé.");
+        }
+
+        // 2. Récupérer les membres actifs
+        var membres = portefeuilleMembreRepository.findByPortefeuilleIdAndEnabledTrue(portefeuilleId);
+
+        // 3. Mapper
+        return membres.stream()
+                .map(m -> new PortefeuilleMembreResponse(
+                        m.getUtilisateur().getId(),
+                        m.getUtilisateur().getNom(),
+                        m.getUtilisateur().getPrenom(),
+                        m.getUtilisateur().getEmail(),
+                        m.getRoleDansPortefeuille()
+                ))
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PortefeuilleMembreResponse> rechercherCollegues(Long agenceId, String query) {
+        // Simple mapping
+        return utilisateurAgenceRepository.searchMembresAgence(agenceId, query).stream()
+                .map(u -> new PortefeuilleMembreResponse(u.getId(), u.getNom(), u.getPrenom(), u.getEmail(), "COLLABORATEUR"))
+                .toList();
     }
 
     private boolean aDroitAdminAgence(UtilisateurAgenceEntity lien) {

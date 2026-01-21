@@ -7,6 +7,7 @@ import com.locapro.backend.entity.AgenceEntity;
 import com.locapro.backend.entity.AgenceInvitationEntity;
 import com.locapro.backend.entity.UtilisateurAgenceEntity;
 import com.locapro.backend.entity.UtilisateurEntity;
+import com.locapro.backend.exception.BadRequestException;
 import com.locapro.backend.exception.ConflictException;
 import com.locapro.backend.exception.ForbiddenException;
 import com.locapro.backend.exception.NotFoundException;
@@ -20,6 +21,7 @@ import com.locapro.backend.service.AgenceMembreService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,18 +33,21 @@ public class AgenceMembreServiceImpl implements AgenceMembreService {
     private final AgenceInvitationRepository agenceInvitationRepository;
     private final UtilisateurAgenceRepository utilisateurAgenceRepository;
     private final NotificationPublisher notificationPublisher;
+    private final AgenceInvitationRepository agenceInvitationRepo;
     private final AgenceInvitationMapper mapper;
 
     public AgenceMembreServiceImpl(AgenceRepository agenceRepository,
                                    UtilisateurRepository utilisateurRepository,
                                    AgenceInvitationRepository agenceInvitationRepository,
                                    UtilisateurAgenceRepository utilisateurAgenceRepository,
-                                   NotificationPublisher notificationPublisher, AgenceInvitationMapper mapper) {
+                                   NotificationPublisher notificationPublisher, AgenceInvitationMapper agenceInvitationRepo, AgenceInvitationRepository agenceInvitationRepo1, AgenceInvitationMapper mapper) {
         this.agenceRepository = agenceRepository;
         this.utilisateurRepository = utilisateurRepository;
         this.agenceInvitationRepository = agenceInvitationRepository;
         this.utilisateurAgenceRepository = utilisateurAgenceRepository;
         this.notificationPublisher = notificationPublisher;
+        this.agenceInvitationRepo = agenceInvitationRepo1;
+
         this.mapper = mapper;
     }
 
@@ -263,6 +268,61 @@ public class AgenceMembreServiceImpl implements AgenceMembreService {
 
         return new ApiMessageResponse("Vous avez quitté l'agence avec succès.");
     }
+
+    @Override
+    public ApiMessageResponse accepterInvitationParToken(String tokenStr, Long userId) {
+
+        // 1. Validation du format (Logique déplacée du Controller vers le Service)
+        if (tokenStr == null || tokenStr.isBlank()) {
+            throw new BadRequestException("Le token est manquant.");
+        }
+
+        UUID token;
+        try {
+            token = UUID.fromString(tokenStr);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Le format du token d'invitation est invalide.");
+        }
+        // 1. Trouver l'invitation via le Token
+        AgenceInvitationEntity invitation = agenceInvitationRepo.findByToken(token)
+                .orElseThrow(() -> new NotFoundException("Invitation introuvable ou lien expiré"));
+
+        // 2. Vérifier si elle est toujours valide
+        if (invitation.getStatut() != InvitationStatut.EN_ATTENTE) { // Assure-toi d'avoir cet Enum ou String
+            throw new ConflictException("Cette invitation n'est plus valide (déjà acceptée ou refusée).");
+        }
+
+        // 3. Vérifier que l'utilisateur n'est pas déjà dans l'agence
+        boolean dejaMembre = utilisateurAgenceRepository.existsByUtilisateur_IdAndAgence_Id(userId, invitation.getAgence().getId());
+        if (dejaMembre) {
+            // On peut soit lancer une erreur, soit juste fermer l'invitation gentiment
+            invitation.setStatut(InvitationStatut.ACCEPTEE);
+            invitation.setRespondedAt(OffsetDateTime.now());
+            agenceInvitationRepo.save(invitation);
+
+        }
+
+        // 4. Récupérer l'utilisateur
+        var user = utilisateurRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
+
+        // 5. CRÉER LE LIEN (Ajouter le membre)
+        UtilisateurAgenceEntity lien = new UtilisateurAgenceEntity();
+        lien.setUtilisateur(user);
+        lien.setAgence(invitation.getAgence());
+        lien.setRoleDansAgence("GESTIONNAIRE"); // Rôle par défaut via invitation
+        lien.setEnabled(true);
+
+        utilisateurAgenceRepository.save(lien);
+
+        // 6. Mettre à jour l'invitation
+        invitation.setStatut(InvitationStatut.ACCEPTEE);
+        invitation.setRespondedAt(OffsetDateTime.now());
+        agenceInvitationRepo.save(invitation);
+
+        return new ApiMessageResponse("Vous avez rejoind l'agence.");
+    }
+
 
     // ------------------ helpers ------------------
 

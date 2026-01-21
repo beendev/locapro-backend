@@ -1,8 +1,9 @@
 package com.locapro.backend.repository;
 
 import com.locapro.backend.entity.UtilisateurAgenceEntity;
+import com.locapro.backend.entity.UtilisateurEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
-
+import org.springframework.data.jpa.repository.Query;
 
 
 import java.util.List;
@@ -29,4 +30,14 @@ public interface UtilisateurAgenceRepository extends JpaRepository<UtilisateurAg
 
 
     Optional<UtilisateurAgenceEntity>  findFirstByUtilisateurIdAndEnabledTrue(Long currentUserId);
+
+    boolean existsByUtilisateur_IdAndAgence_Id(Long userId, Long id);
+
+    @Query("SELECT ua.utilisateur FROM UtilisateurAgenceEntity ua " +
+            "WHERE ua.agence.id = :agenceId " +
+            "AND ua.enabled = true " +
+            "AND (LOWER(ua.utilisateur.nom) LIKE LOWER(CONCAT('%', :query, '%')) " +
+            "OR LOWER(ua.utilisateur.prenom) LIKE LOWER(CONCAT('%', :query, '%')) " +
+            "OR LOWER(ua.utilisateur.email) LIKE LOWER(CONCAT('%', :query, '%')))")
+    List<UtilisateurEntity> searchMembresAgence(Long agenceId, String query);
 }

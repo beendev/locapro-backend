@@ -1,71 +1,76 @@
 package com.locapro.backend.mapper;
 
 import com.locapro.backend.dto.bien.DetailsSpecifiquesRequest;
-import com.locapro.backend.entity.DetailsResidentielEntity;
-import com.locapro.backend.entity.DetailsCommerceEntity;
-import com.locapro.backend.entity.DetailsBureauEntity;
-import com.locapro.backend.entity.DetailsParkingEntity;
-import com.locapro.backend.entity.BienEntity;
+import com.locapro.backend.entity.*;
 import org.springframework.stereotype.Component;
 
 @Component
 public class BienDetailsMapper {
 
-    // ========= RESIDENTIEL =========
+    // ========================================================================
+    // 1. RÉSIDENTIEL (Appart, Maison...)
+    // ========================================================================
 
     public DetailsResidentielEntity toDetailsResidentielEntity(DetailsSpecifiquesRequest d, BienEntity bien) {
         if (d == null || bien == null) return null;
-
         DetailsResidentielEntity e = new DetailsResidentielEntity();
         e.setBienId(bien.getId());
-
         applyResidentielFields(d, e);
-
         return e;
     }
 
     public void updateDetailsResidentielEntity(DetailsSpecifiquesRequest d, DetailsResidentielEntity e) {
         if (d == null || e == null) return;
-        // on ne touche PAS à e.setId(...) ni e.setBienId(...)
-        applyResidentielFields(d, e);
+        applyResidentielFields(d, e); // <-- On réutilise la même logique
     }
 
+    // 👇 LA LISTE COMPLÈTE (Vérifiée avec ton Frontend)
     private void applyResidentielFields(DetailsSpecifiquesRequest d, DetailsResidentielEntity e) {
-        e.setSuperficieHabitableM2(d.superficieHabitableM2());
-        e.setNombreFacades(d.nombreFacades());
-        e.setEtage(d.etage());
-        e.setAnneeConstruction(d.anneeConstruction());
-        e.setAnneeRenovation(d.anneeRenovation());
-        e.setNbChambres(d.nbChambres());
-        e.setNbSallesBain(d.nbSallesBain());
-        e.setNbSallesDouche(d.nbSallesDouche());
-        e.setNbWc(d.nbWc());
-        e.setHallEntree(d.hallEntree());
-        e.setTypeCuisine(d.typeCuisine());
-        e.setPebClasse(d.pebClasse());
-        e.setPebConsoKwhM2An(d.pebConsoKwhM2An());
-        e.setTypeChassis(d.typeChassis());
-        e.setTypeChauffage(d.typeChauffage());
-        e.setElectriciteConforme(d.electriciteConforme());
-        e.setDetecteursFumee(d.detecteursFumee());
-        e.setMeuble(d.meuble());
-        e.setParlophone(d.parlophone());
-        e.setAlarme(d.alarme());
-        e.setQualiteSols(d.qualiteSols());
-        e.setJardin(d.jardin());
-        e.setJardinSurfaceM2(d.jardinSurfaceM2());
-        e.setTerrasse(d.terrasse());
-        e.setTerrasseSurfaceM2(d.terrasseSurfaceM2());
-        e.setBalcon(d.balcon());
-        e.setCave(d.cave());
-        e.setGrenier(d.grenier());
+        // Surfaces & Dimensions
+        if(d.superficieHabitableM2() != null) e.setSuperficieHabitableM2(d.superficieHabitableM2());
+        if(d.nombreFacades() != null) e.setNombreFacades(d.nombreFacades());
+        if(d.etage() != null) e.setEtage(d.etage());
+
+        // Années
+        if(d.anneeConstruction() != null) e.setAnneeConstruction(d.anneeConstruction());
+        if(d.anneeRenovation() != null) e.setAnneeRenovation(d.anneeRenovation());
+
+        // Pièces
+        if(d.nbChambres() != null) e.setNbChambres(d.nbChambres());
+        if(d.nbSallesBain() != null) e.setNbSallesBain(d.nbSallesBain());
+        if(d.nbSallesDouche() != null) e.setNbSallesDouche(d.nbSallesDouche());
+        if(d.nbWc() != null) e.setNbWc(d.nbWc());
+
+        // Techniques (Enums / Strings)
+        if(d.typeCuisine() != null) e.setTypeCuisine(d.typeCuisine());
+        if(d.typeChauffage() != null) e.setTypeChauffage(d.typeChauffage());
+        if(d.typeChassis() != null) e.setTypeChassis(d.typeChassis()); // <-- Souvent oublié !
+        if(d.pebClasse() != null) e.setPebClasse(d.pebClasse());
+        if(d.pebConsoKwhM2An() != null) e.setPebConsoKwhM2An(d.pebConsoKwhM2An());
+        if(d.electriciteConforme() != null) e.setElectriciteConforme(d.electriciteConforme());
+        if(d.qualiteSols() != null) e.setQualiteSols(d.qualiteSols());
+
+        // Booleans (Équipements)
+        if(d.meuble() != null) e.setMeuble(d.meuble());
+        if(d.terrasse() != null) e.setTerrasse(d.terrasse());
+        if(d.terrasseSurfaceM2() != null) e.setTerrasseSurfaceM2(d.terrasseSurfaceM2());
+        if(d.jardin() != null) e.setJardin(d.jardin());
+        if(d.jardinSurfaceM2() != null) e.setJardinSurfaceM2(d.jardinSurfaceM2());
+        if(d.balcon() != null) e.setBalcon(d.balcon());
+        if(d.cave() != null) e.setCave(d.cave());
+        if(d.grenier() != null) e.setGrenier(d.grenier());
+        if(d.parlophone() != null) e.setParlophone(d.parlophone());
+        if(d.alarme() != null) e.setAlarme(d.alarme());
+        if(d.detecteursFumee() != null) e.setDetecteursFumee(d.detecteursFumee());
+        if(d.hallEntree() != null) e.setHallEntree(d.hallEntree());
     }
 
-    // ========= COMMERCE =========
+    // ========================================================================
+    // 2. COMMERCE
+    // ========================================================================
 
     public DetailsCommerceEntity toDetailsCommerceEntity(DetailsSpecifiquesRequest d, BienEntity bien) {
         if (d == null || bien == null) return null;
-
         DetailsCommerceEntity e = new DetailsCommerceEntity();
         e.setBienId(bien.getId());
         applyCommerceFields(d, e);
@@ -78,17 +83,18 @@ public class BienDetailsMapper {
     }
 
     private void applyCommerceFields(DetailsSpecifiquesRequest d, DetailsCommerceEntity e) {
-        e.setSurfaceCommercialeM2(d.surfaceCommercialeM2());
-        e.setSurfaceVitrineM2(d.surfaceVitrineM2());
-        e.setSurfaceReserveM2(d.surfaceReserveM2());
-        e.setExtractionHoreca(d.extractionHoreca());
+        if(d.surfaceCommercialeM2() != null) e.setSurfaceCommercialeM2(d.surfaceCommercialeM2());
+        if(d.surfaceVitrineM2() != null) e.setSurfaceVitrineM2(d.surfaceVitrineM2());
+        if(d.surfaceReserveM2() != null) e.setSurfaceReserveM2(d.surfaceReserveM2());
+        if(d.extractionHoreca() != null) e.setExtractionHoreca(d.extractionHoreca());
     }
 
-    // ========= BUREAU =========
+    // ========================================================================
+    // 3. BUREAU
+    // ========================================================================
 
     public DetailsBureauEntity toDetailsBureauEntity(DetailsSpecifiquesRequest d, BienEntity bien) {
         if (d == null || bien == null) return null;
-
         DetailsBureauEntity e = new DetailsBureauEntity();
         e.setBienId(bien.getId());
         applyBureauFields(d, e);
@@ -101,17 +107,18 @@ public class BienDetailsMapper {
     }
 
     private void applyBureauFields(DetailsSpecifiquesRequest d, DetailsBureauEntity e) {
-        e.setSurfaceBureauxM2(d.surfaceBureauxM2());
-        e.setNbBureauxCloisonnes(d.nbBureauxCloisonnes());
-        e.setSalleReunion(d.salleReunion());
-        e.setCablageInformatique(d.cablageInformatique());
+        if(d.surfaceBureauxM2() != null) e.setSurfaceBureauxM2(d.surfaceBureauxM2());
+        if(d.nbBureauxCloisonnes() != null) e.setNbBureauxCloisonnes(d.nbBureauxCloisonnes());
+        if(d.salleReunion() != null) e.setSalleReunion(d.salleReunion());
+        if(d.cablageInformatique() != null) e.setCablageInformatique(d.cablageInformatique());
     }
 
-    // ========= PARKING =========
+    // ========================================================================
+    // 4. PARKING
+    // ========================================================================
 
     public DetailsParkingEntity toDetailsParkingEntity(DetailsSpecifiquesRequest d, BienEntity bien) {
         if (d == null || bien == null) return null;
-
         DetailsParkingEntity p = new DetailsParkingEntity();
         p.setBienId(bien.getId());
         applyParkingFields(d, p);
@@ -124,22 +131,17 @@ public class BienDetailsMapper {
     }
 
     private void applyParkingFields(DetailsSpecifiquesRequest d, DetailsParkingEntity p) {
-        p.setNumeroPlace(d.numeroPlace());
-        p.setLongueurM(d.longueurM());
-        p.setLargeurM(d.largeurM());
-        p.setTypePorte(d.typePorte());
-        p.setPriseElectrique(d.priseElectrique());
+        if(d.numeroPlace() != null) p.setNumeroPlace(d.numeroPlace());
+        if(d.longueurM() != null) p.setLongueurM(d.longueurM());
+        if(d.largeurM() != null) p.setLargeurM(d.largeurM());
+        if(d.typePorte() != null) p.setTypePorte(d.typePorte());
+        if(d.priseElectrique() != null) p.setPriseElectrique(d.priseElectrique());
     }
 
-    // ========= UTILITAIRE : parking intégré ? =========
-
+    // Utilitaire
     public boolean hasParkingInfo(DetailsSpecifiquesRequest d) {
         if (d == null) return false;
-
-        return d.numeroPlace() != null
-                || d.longueurM() != null
-                || d.largeurM() != null
-                || d.typePorte() != null
-                || d.priseElectrique() != null;
+        return d.numeroPlace() != null || d.longueurM() != null
+                || d.largeurM() != null || d.typePorte() != null || d.priseElectrique() != null;
     }
 }

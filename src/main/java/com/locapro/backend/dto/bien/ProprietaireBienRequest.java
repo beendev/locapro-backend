@@ -2,6 +2,7 @@ package com.locapro.backend.dto.bien;
 
 import com.locapro.backend.domain.context.ProprietaireType;
 
+
 public record ProprietaireBienRequest(
         ProprietaireType type,
         String nom,
@@ -9,5 +10,7 @@ public record ProprietaireBienRequest(
         String email,
         String entrepriseNom,
         Long proprietaireUtilisateurId,
-        Long proprietaireEntrepriseId
+        Long proprietaireEntrepriseI
+    
+       
 ) {}

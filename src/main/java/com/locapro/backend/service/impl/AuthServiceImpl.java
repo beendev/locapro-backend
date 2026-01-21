@@ -2,10 +2,13 @@ package com.locapro.backend.service.impl;
 
 import com.locapro.backend.dto.auth.*;
 import com.locapro.backend.dto.common.ApiMessageResponse;
+import com.locapro.backend.dto.user.UserResponse;
 import com.locapro.backend.entity.EmailVerificationTokenEntity;
 import com.locapro.backend.entity.UtilisateurEntity;
 import com.locapro.backend.exception.*;
+import com.locapro.backend.mapper.UserMapper;
 import com.locapro.backend.repository.EmailVerificationTokenRepository;
+import com.locapro.backend.repository.EntrepriseRepository; // 👈 Import ajouté
 import com.locapro.backend.repository.UtilisateurRepository;
 import com.locapro.backend.security.JwtService;
 import com.locapro.backend.service.AuthService;
@@ -17,33 +20,38 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Service
 public class AuthServiceImpl implements AuthService {
 
     private final UtilisateurRepository utilisateurRepository;
+    private final EntrepriseRepository entrepriseRepository; // 👈 Ajouté
     private final PasswordEncoder passwordEncoder;
     private final EmailVerificationTokenRepository emailTokenRepository;
     private final MailSender mailSender;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
+    private final UserMapper userMapper;
 
     public AuthServiceImpl(
             UtilisateurRepository utilisateurRepository,
+            EntrepriseRepository entrepriseRepository, // 👈 Ajouté au constructeur
             PasswordEncoder passwordEncoder,
             EmailVerificationTokenRepository emailTokenRepository,
             MailSender mailSender,
             JwtService jwtService,
-            RefreshTokenService refreshTokenService
+            RefreshTokenService refreshTokenService,
+            UserMapper userMapper
     ) {
         this.utilisateurRepository = utilisateurRepository;
+        this.entrepriseRepository = entrepriseRepository; // 👈 Assignation
         this.passwordEncoder = passwordEncoder;
         this.emailTokenRepository = emailTokenRepository;
         this.mailSender = mailSender;
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
+        this.userMapper = userMapper;
     }
 
     @Value("${app.auth.access-ttl-seconds:900}")
@@ -51,14 +59,13 @@ public class AuthServiceImpl implements AuthService {
     @Value("${app.auth.email-verif-ttl-hours:24}")
     private long emailVerifTtlHours;
 
-
     @Override
     @Transactional
     public UserResponse register(RegisterUserRequest request) {
-        final String email = normalizeEmail(request.getEmail());
-        final String prenom = safeTrim(request.getPrenom());
-        final String nom = safeTrim(request.getNom());
-        final String numeroIpi = normalizeIpi(request.getNumeroIpi());
+        final String email = normalizeEmail(request.email());
+        final String prenom = safeTrim(request.prenom());
+        final String nom = safeTrim(request.nom());
+        final String numeroIpi = normalizeIpi(request.numeroIpi());
 
         if (utilisateurRepository.existsByEmail(email)) {
             throw new ConflictException("L'adresse e-mail est déjà utilisée");
@@ -70,7 +77,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // === Vérification de la force du mot de passe ===
-        final String rawPassword = request.getMotDePasse();
+        final String rawPassword = request.motDePasse();
         validatePasswordStrength(rawPassword);
 
         final String passwordHash = passwordEncoder.encode(rawPassword);
@@ -80,46 +87,47 @@ public class AuthServiceImpl implements AuthService {
         user.setNom(nom);
         user.setEmail(email);
         user.setNumeroIpi(numeroIpi);
-        user.setDateNaissance(request.getDateNaissance());
+        user.setDateNaissance(request.dateNaissance());
         user.setPasswordHash(passwordHash);
+        user.setTelephone(request.telephone());
         user.setEmailVerified(false);
         user.setEnabled(true);
 
-        // adresse de domicile
-        user.setRue(safeTrim(request.getRue()));
-        user.setNumero(safeTrim(request.getNumero()));
-        user.setBoite(safeTrim(request.getBoite()));
-        user.setCodePostal(safeTrim(request.getCodePostal()));
-        user.setVille(safeTrim(request.getVille()));
+        // Adresse de domicile
+        user.setRue(safeTrim(request.rue()));
+        user.setNumero(safeTrim(request.numero()));
+        user.setBoite(safeTrim(request.boite()));
+        user.setCodePostal(safeTrim(request.codePostal()));
+        user.setVille(safeTrim(request.ville()));
 
-        String pays = safeTrim(request.getPays());
+        String pays = safeTrim(request.pays());
         if (pays == null || pays.isBlank()) {
             pays = "Belgique";
         }
         user.setPays(pays);
 
-        user.setLatitude(request.getLatitude());
-        user.setLongitude(request.getLongitude());
+        user.setLatitude(request.latitude());
+        user.setLongitude(request.longitude());
 
         user = utilisateurRepository.save(user);
 
         var token = new com.locapro.backend.entity.EmailVerificationTokenEntity();
         token.setUtilisateurId(user.getId());
         token.setToken(UUID.randomUUID());
-        token.setExpiresAt(OffsetDateTime.now().plus(24, ChronoUnit.HOURS));
+        token.setExpiresAt(OffsetDateTime.now().plusHours(24));
         token.setUsed(false);
         emailTokenRepository.save(token);
 
         mailSender.sendEmailVerification(email, token.getToken().toString());
 
-        return toUserResponse(user, false);
+        // Ici, on utilise le mapper simple (pas d'entreprise au register)
+        return userMapper.toUserResponse(user);
     }
-
-
 
     @Override
     @Transactional
     public void verifyEmail(String rawToken) {
+        // 1. Validation basique du string
         if (rawToken == null || rawToken.isBlank()) {
             throw new IllegalArgumentException("Token manquant");
         }
@@ -131,34 +139,38 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("Token invalide");
         }
 
-        var token = emailTokenRepository.findByToken(tokenUuid)
-                .orElseThrow(() -> new NotFoundException("Token introuvable"));
+        // 2. On cherche le token
+        // S'il n'existe pas, c'est peut-être qu'il a déjà été validé/supprimé 1ms avant.
+        var tokenOpt = emailTokenRepository.findByToken(tokenUuid);
 
-        if (token.isUsed()) {
-            throw new ConflictException("Token déjà utilisé");
+        if (tokenOpt.isEmpty()) {
+            // Ici, on peut considérer que c'est une erreur (lien mort)
+            // OU considérer que c'est un succès si l'user est déjà actif.
+            // Pour être strict :
+            throw new NotFoundException("Lien invalide ou déjà utilisé.");
         }
 
-        if (token.getExpiresAt() == null || token.getExpiresAt().isBefore(OffsetDateTime.now())) {
-            throw new ConflictException("Token expiré");
-        }
+        var token = tokenOpt.get();
 
+        // 3. On récupère l'utilisateur associé au token
         var user = utilisateurRepository.findById(token.getUtilisateurId())
-                .orElseThrow(() -> new NotFoundException("Utilisateur associé introuvable"));
+                .orElseThrow(() -> new NotFoundException("Utilisateur introuvable"));
 
-        if (!user.isEmailVerified()) {
+        // 4. On active l'utilisateur (SI ce n'est pas déjà fait)
+        if (!Boolean.TRUE.equals(user.isEmailVerified())) {
             user.setEmailVerified(true);
-            utilisateurRepository.save(user);
+            utilisateurRepository.save(user); // ✅ On sauvegarde l'utilisateur (il devient actif)
         }
 
-        token.setUsed(true);
-        emailTokenRepository.save(token);
-
-        emailTokenRepository.deleteByUtilisateurId(user.getId());
+        // 5. ON SUPPRIME LES TOKENS (Le ménage) 🧹
+        // Cette ligne supprime UNIQUEMENT dans la table 'email_verification_tokens'
+        // Grâce au @Modifying/@Query, ça ne plante pas si c'est déjà vide.
+        emailTokenRepository.deleteAllTokensByUser(user.getId());
     }
+
 
     @Override
     public LoginResult login(String email, String rawPassword) {
-        // tu peux normaliser l’email ici si tu veux tolérer les majuscules/espaces
         final String normalizedEmail = normalizeEmail(email);
 
         var user = utilisateurRepository.findByEmailIgnoreCase(normalizedEmail)
@@ -179,10 +191,18 @@ public class AuthServiceImpl implements AuthService {
         var accessToken = jwtService.generateAccessToken(user.getId(), user.getEmail());
         var refresh = refreshTokenService.create(user);
 
+        // 👇 LOGIQUE ONBOARDING : Récupérer l'entreprise ID si elle existe
+        Long entrepriseId = entrepriseRepository.findIdByUserIdAndEnabledTrue(user.getId())
+                .orElse(null);
+
+        // Convertir en DTO complet pour le front
+        UserResponse userDto = userMapper.toUserResponseWithEntreprise(user, entrepriseId);
+
         return new LoginResult(
                 accessToken,
                 accessTtlSeconds,
-                refresh.getToken()
+                refresh.getToken(),
+                userDto // 👈 Ajouté à la réponse
         );
     }
 
@@ -198,34 +218,23 @@ public class AuthServiceImpl implements AuthService {
 
         var accessToken = jwtService.generateAccessToken(user.getId(), user.getEmail());
 
+        // Même logique pour le refresh : on renvoie le user à jour
+        Long entrepriseId = entrepriseRepository.findIdByUserIdAndEnabledTrue(user.getId())
+                .orElse(null);
+
+        UserResponse userDto = userMapper.toUserResponseWithEntreprise(user, entrepriseId);
+
         return new LoginResult(
                 accessToken,
                 accessTtlSeconds,
-                rotated.getToken()
+                rotated.getToken(),
+                userDto // 👈 Ajouté ici aussi
         );
     }
 
     @Override
-    @Transactional
     public void logout(String refreshToken) {
-        // Idempotent : pas d’erreur si nul / inconnu
-        refreshTokenService.revoke(refreshToken);
-    }
-
-    @Override
-    @Transactional
-    public void logoutAll(Long userId) {
-        refreshTokenService.revokeAllForUser(userId);
-    }
-
-    @Override
-    public void logoutByRefreshToken(String refreshToken) {
         refreshTokenService.revokeByToken(refreshToken);
-    }
-
-    @Override
-    public void logoutAllDevices(Long userId) {
-        refreshTokenService.revokeAllForUser(userId);
     }
 
     @Override
@@ -241,30 +250,25 @@ public class AuthServiceImpl implements AuthService {
                 .findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new NotFoundException("Aucun compte associé à cette adresse e-mail."));
 
-        // Si déjà vérifié → pas besoin de renvoyer un mail
         if (Boolean.TRUE.equals(user.isEmailVerified())) {
             return new ApiMessageResponse("Ce compte est déjà activé.");
         }
 
-        // Nettoyer les anciens tokens pour cet utilisateur
         emailTokenRepository.deleteByUtilisateurId(user.getId());
 
-        // Créer un nouveau token
         var tokenEntity = new EmailVerificationTokenEntity();
         tokenEntity.setUtilisateurId(user.getId());
         tokenEntity.setToken(UUID.randomUUID());
-        tokenEntity.setExpiresAt(
-                OffsetDateTime.now().plusHours(emailVerifTtlHours)
-        );
+        tokenEntity.setExpiresAt(OffsetDateTime.now().plusHours(emailVerifTtlHours));
         tokenEntity.setUsed(false);
 
         emailTokenRepository.save(tokenEntity);
 
-        // Renvoyer le mail
         mailSender.sendEmailVerification(user.getEmail(), tokenEntity.getToken().toString());
 
         return new ApiMessageResponse("Un nouvel e-mail de confirmation vient de vous être envoyé.");
     }
+
     /* ======================== privates ======================== */
 
     private String normalizeEmail(String email) {
@@ -282,37 +286,29 @@ public class AuthServiceImpl implements AuthService {
         return s == null ? null : s.trim();
     }
 
-    private UserResponse toUserResponse(UtilisateurEntity e, boolean hasEntreprise) {
-        UserResponse r = new UserResponse();
-        r.setId(e.getId());
-        r.setPrenom(e.getPrenom());
-        r.setNom(e.getNom());
-        r.setEmail(e.getEmail());
-        r.setDateNaissance(e.getDateNaissance());
-        r.setNumeroIpi(e.getNumeroIpi());
-        r.setEmailVerified(e.isEmailVerified());
-        r.setHasEntreprise(hasEntreprise);
-        return r;
-    }
-
     private void validatePasswordStrength(String password) {
         if (password == null) {
             throw new IllegalArgumentException("Le mot de passe est obligatoire.");
         }
 
+        // 1. Les vérifications de base
         boolean hasDigit = password.chars().anyMatch(Character::isDigit);
-        boolean hasSpecial = password.chars().anyMatch(ch ->
-                "!@#$%^&*()_+-=[]{}|;':\",.<>/?`~\\".indexOf(ch) >= 0
-        );
+        boolean hasUpper = password.chars().anyMatch(Character::isUpperCase);
+        boolean hasLower = password.chars().anyMatch(Character::isLowerCase);
         boolean longEnough = password.length() >= 8;
 
-        if (!longEnough || !hasDigit || !hasSpecial) {
-            // Remplace IllegalArgumentException par ta propre exception HTTP 400 si tu en as une
+        // 2. 👇 CORRECTION : Tout caractère qui n'est NI lettre NI chiffre est considéré comme spécial
+        // Cela correspond à la regex frontend /[^A-Za-z0-9]/
+        boolean hasSpecial = password.chars().anyMatch(ch -> !Character.isLetterOrDigit(ch));
+
+        // 3. Validation finale
+        if (!longEnough || !hasDigit || !hasSpecial || !hasUpper || !hasLower) {
             throw new IllegalArgumentException(
-                    "Le mot de passe doit contenir au moins 8 caractères, " +
-                            "au moins un chiffre et au moins un caractère spécial."
+                    "Le mot de passe doit contenir 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial."
             );
         }
     }
+
+
 
 }

@@ -1,25 +1,17 @@
 package com.locapro.backend.repository;
 
 import com.locapro.backend.entity.BienEntity;
-import com.locapro.backend.entity.ProprietaireBienEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
-import java.util.Optional;
+
 
 public interface BienRepository extends JpaRepository<BienEntity, Long> {
 
 
 
-    // 1) Biens d’une agence
-    @Query("""
-        select b
-        from BienEntity b
-        where b.enabled = true
-          and b.agenceId = :agenceId
-    """)
-    List<BienEntity> findAllByAgenceId(Long agenceId);
+
 
     // 2) Biens perso d’un utilisateur (propriétaire)
     @Query("""
@@ -33,7 +25,13 @@ public interface BienRepository extends JpaRepository<BienEntity, Long> {
     """)
     List<BienEntity> findAllByProprietaireUtilisateur(Long userId);
 
-    List<BienEntity> findByAgenceIdAndEnabledTrueAndEstUniteLocativeTrue(Long agenceId);
+    List<BienEntity> findByAgenceIdAndEnabledTrue(Long agenceId);
+
+    // 1. Pour afficher le contenu d'un portefeuille
+    List<BienEntity> findByPortefeuilleIdAndEnabledTrue(Long portefeuilleId);
+
+    // 2. Pour la modale d'ajout (Les biens de l'agence qui n'ont PAS de portefeuille)
+    List<BienEntity> findByAgenceIdAndPortefeuilleIdIsNullAndEnabledTrueAndEstUniteLocativeTrue(Long agenceId);
 
 
 

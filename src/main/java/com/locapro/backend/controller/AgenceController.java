@@ -1,13 +1,12 @@
 package com.locapro.backend.controller;
 
-import com.locapro.backend.dto.agence.AgenceInvitationResponse;
-import com.locapro.backend.dto.agence.AgenceRequest;
-import com.locapro.backend.dto.agence.AgenceResponse;
-import com.locapro.backend.dto.agence.InviterGestionnaireRequest;
+import com.locapro.backend.dto.agence.*;
 import com.locapro.backend.dto.common.ApiMessageResponse;
 import com.locapro.backend.security.JwtAuthFilter.UserPrincipal;
 import com.locapro.backend.service.AgenceMembreService;
 import com.locapro.backend.service.AgenceService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -17,6 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/agences")
+@Tag(name = "Gestion des Agences", description = "Endpoints pour la gestion des agences immobilières et des invitations de membres")
 public class AgenceController {
 
     private final AgenceService service;
@@ -27,8 +27,9 @@ public class AgenceController {
         this.agenceMembreService = agenceMembreService;
     }
 
-    /** Crée une agence liée à l’entreprise de l’utilisateur connecté */
     @PostMapping
+    @Operation(summary = "Créer une agence",
+            description = "Crée une agence liée à l’entreprise de l’utilisateur connecté. L'utilisateur devient ADMIN_AGENCE.")
     public ResponseEntity<AgenceResponse> create(
             @Valid @RequestBody AgenceRequest req,
             Authentication auth
@@ -38,15 +39,17 @@ public class AgenceController {
         return ResponseEntity.ok(created);
     }
 
-    /** Récupère l’agence courante de l’utilisateur connecté */
     @GetMapping("/current")
+    @Operation(summary = "Récupérer l'agence courante",
+            description = "Retourne les informations de l'agence à laquelle l'utilisateur connecté est rattaché.")
     public ResponseEntity<AgenceResponse> getCurrent(Authentication auth) {
         var p = (UserPrincipal) auth.getPrincipal();
         return ResponseEntity.ok(service.getCurrent(p.id()));
     }
 
-    /** Invite un gestionnaire dans une agence donnée */
     @PostMapping("/{agenceId}/invitations")
+    @Operation(summary = "Inviter un gestionnaire",
+            description = "Envoie une invitation par email pour rejoindre l'agence en tant que gestionnaire.")
     public ResponseEntity<ApiMessageResponse> inviterGestionnaire(
             @PathVariable Long agenceId,
             @Valid @RequestBody InviterGestionnaireRequest req,
@@ -58,11 +61,9 @@ public class AgenceController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Liste des invitations EN_ATTENTE pour une agence donnée.
-     * GET /agences/{agenceId}/invitations/en-attente
-     */
     @GetMapping("/{agenceId}/invitations/en-attente")
+    @Operation(summary = "Lister les invitations en attente",
+            description = "Récupère la liste des invitations qui n'ont pas encore été acceptées ou refusées pour une agence.")
     public ResponseEntity<List<AgenceInvitationResponse>> listInvitationsEnAttente(
             @PathVariable Long agenceId,
             Authentication auth
@@ -72,11 +73,9 @@ public class AgenceController {
         return ResponseEntity.ok(list);
     }
 
-    /**
-     * Annuler une invitation par son id.
-     * POST /agences/invitations/{invitationId}/annuler
-     */
     @PostMapping("/invitations/{invitationId}/annuler")
+    @Operation(summary = "Annuler une invitation",
+            description = "Permet à l'administrateur de l'agence d'annuler une invitation envoyée.")
     public ResponseEntity<ApiMessageResponse> annulerInvitation(
             @PathVariable Long invitationId,
             Authentication auth
@@ -86,8 +85,9 @@ public class AgenceController {
         return ResponseEntity.ok(resp);
     }
 
-    /** L’utilisateur invité accepte une invitation */
     @PostMapping("/invitations/{invitationId}/accepter")
+    @Operation(summary = "Accepter une invitation",
+            description = "L'utilisateur invité accepte de rejoindre l'agence.")
     public ResponseEntity<ApiMessageResponse> accepterInvitation(
             @PathVariable Long invitationId,
             Authentication auth
@@ -97,8 +97,9 @@ public class AgenceController {
         return ResponseEntity.ok(resp);
     }
 
-    /** L’utilisateur invité refuse une invitation */
     @PostMapping("/invitations/{invitationId}/refuser")
+    @Operation(summary = "Refuser une invitation",
+            description = "L'utilisateur invité décline l'invitation de l'agence.")
     public ResponseEntity<ApiMessageResponse> refuserInvitation(
             @PathVariable Long invitationId,
             Authentication auth
@@ -109,15 +110,29 @@ public class AgenceController {
     }
 
     @DeleteMapping("/{agenceId}/quitter")
+    @Operation(summary = "Quitter l'agence",
+            description = "Permet à un membre de quitter volontairement son agence actuelle.")
     public ResponseEntity<ApiMessageResponse> quitterAgence(
             @PathVariable Long agenceId,
             Authentication authentication
     ) {
         var p = (UserPrincipal) authentication.getPrincipal();
-
         var resp = agenceMembreService.quitterAgence(p.id(), agenceId);
-
         return ResponseEntity.ok(resp);
     }
 
+    @PostMapping("/invitations/validate-token")
+    @Operation(summary = "Accepter une invitation via Token",
+            description = "Permet à l'utilisateur connecté d'accepter une invitation en fournissant le token reçu par email.")
+    public ResponseEntity<ApiMessageResponse> acceptInvitationByToken(
+            @RequestBody @Valid ValidateTokenRequest req,
+            Authentication auth
+    ) {
+        var p = (UserPrincipal) auth.getPrincipal();
+
+        // Plus besoin de body.get("token"), on a un objet typé
+        agenceMembreService.accepterInvitationParToken(req.token(), p.id());
+
+        return ResponseEntity.ok(new ApiMessageResponse("Invitation acceptée avec succès. Bienvenue dans l'équipe !"));
+    }
 }

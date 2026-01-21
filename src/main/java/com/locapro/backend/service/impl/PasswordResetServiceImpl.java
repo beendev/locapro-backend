@@ -1,4 +1,3 @@
-// com.locapro.backend.service.impl.PasswordResetServiceImpl
 package com.locapro.backend.service.impl;
 
 import com.locapro.backend.dto.auth.ForgotPasswordRequest;
@@ -34,9 +33,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     @Value("${app.auth.pwreset-ttl-minutes:30}")
     private long resetTtlMinutes;
 
-    // Lien front à insérer dans l’e-mail (le front lit ?token=.. et soumet ensuite au backend)
-    @Value("${app.frontend.reset-password-url:https://app.locapro.example/reset-password}")
-    private String frontResetUrl;
+    // ❌ J'ai supprimé 'frontResetUrl' car c'est géré par SmtpMailSender maintenant
 
     public PasswordResetServiceImpl(UtilisateurRepository utilisateurRepository, PasswordResetTokenRepository tokenRepo, PasswordEncoder passwordEncoder, RefreshTokenService refreshTokenService, MailSender mailSender) {
         this.utilisateurRepository = utilisateurRepository;
@@ -48,32 +45,24 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
     @Override
     public void requestReset(ForgotPasswordRequest req) {
-        // Toujours normaliser l’email
         String email = req.email().trim().toLowerCase();
 
-        // NE PAS révéler si le compte existe → on répondra 204 quoi qu’il arrive
         Optional<UtilisateurEntity> userOpt = utilisateurRepository.findByEmailIgnoreCase(email);
 
         userOpt.ifPresent(user -> {
-            // (Optionnel) nettoyer anciens tokens
             tokenRepo.deleteByUtilisateur_Id(user.getId());
 
-            // Créer un nouveau token
             var t = new PasswordResetTokenEntity();
             t.setUtilisateur(user);
             t.setToken(UUID.randomUUID());
-            t.setExpiresAt(OffsetDateTime.now().plus(resetTtlMinutes, ChronoUnit.MINUTES));
+            t.setExpiresAt(OffsetDateTime.now().plusMinutes(resetTtlMinutes));
             t.setUsed(false);
             tokenRepo.save(t);
 
-            // Construire le lien pour l’e-mail : https://front/reset-password?token=XXXXX
-            String link = frontResetUrl + "?token=" + t.getToken();
-
-            // Envoyer l’e-mail
-            mailSender.sendPasswordReset(email, link);
+            // 👇 CORRECTION ICI : On envoie JUSTE le token (UUID)
+            // Le SmtpMailSender se chargera d'ajouter "http://localhost:3000/reset-password?token="
+            mailSender.sendPasswordReset(email, t.getToken().toString());
         });
-
-        // Retour en controller : 204 No Content (même si user inconnu)
     }
 
     @Override
@@ -82,7 +71,6 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         try {
             token = UUID.fromString(req.token().trim());
         } catch (IllegalArgumentException e) {
-            // On ne précise pas trop : on lève une 400 ou 401 en controller
             throw new IllegalArgumentException("Token invalide");
         }
 
@@ -94,38 +82,36 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         }
 
         var user = tokenEntity.getUtilisateur();
-        // Mettre à jour le mot de passe
+
         final String rawPassword = req.newPassword();
-        validatePasswordStrength(rawPassword);
+        validatePasswordStrength(rawPassword); // Validation alignée avec le Register
 
         user.setPasswordHash(passwordEncoder.encode(rawPassword));
 
-        // Marquer le token comme utilisé
         tokenEntity.setUsed(true);
 
-        // Révoquer tous les refresh → déconnecte toutes les sessions
         refreshTokenService.revokeAllForUser(user.getId());
 
-        return new ApiMessageResponse("Mot de passe changer avec success");
-        // Flush via transaction @Transactional
+        return new ApiMessageResponse("Mot de passe modifié avec succès");
     }
 
+    // 👇 VALIDATION MISE À JOUR (Identique à AuthServiceImpl)
     private void validatePasswordStrength(String password) {
         if (password == null) {
             throw new IllegalArgumentException("Le mot de passe est obligatoire.");
         }
 
         boolean hasDigit = password.chars().anyMatch(Character::isDigit);
-        boolean hasSpecial = password.chars().anyMatch(ch ->
-                "!@#$%^&*()_+-=[]{}|;':\",.<>/?`~\\".indexOf(ch) >= 0
-        );
+        boolean hasUpper = password.chars().anyMatch(Character::isUpperCase); // Ajout
+        boolean hasLower = password.chars().anyMatch(Character::isLowerCase); // Ajout
         boolean longEnough = password.length() >= 8;
 
-        if (!longEnough || !hasDigit || !hasSpecial) {
-            // Remplace IllegalArgumentException par ta propre exception HTTP 400 si tu en as une
+        // Même logique que AuthServiceImpl : Tout ce qui n'est pas lettre ou chiffre est spécial
+        boolean hasSpecial = password.chars().anyMatch(ch -> !Character.isLetterOrDigit(ch));
+
+        if (!longEnough || !hasDigit || !hasSpecial || !hasUpper || !hasLower) {
             throw new IllegalArgumentException(
-                    "Le mot de passe doit contenir au moins 8 caractères, " +
-                            "au moins un chiffre et au moins un caractère spécial."
+                    "Le mot de passe doit contenir 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial."
             );
         }
     }

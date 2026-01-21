@@ -1,4 +1,4 @@
-// com.locapro.backend.error.GlobalExceptionHandler.java
+
 package com.locapro.backend.error;
 
 import com.locapro.backend.dto.common.ApiErrorResponse;
@@ -181,5 +181,23 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+    }
+
+    // Ajoute ça dans GlobalExceptionHandler.java si ce n'est pas déjà fait
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ApiErrorResponse> handleBadRequestCustom(
+            BadRequestException ex,
+            HttpServletRequest request
+    ) {
+        ApiErrorResponse body = new ApiErrorResponse(
+                OffsetDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                "BAD_REQUEST",
+                ex.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 }

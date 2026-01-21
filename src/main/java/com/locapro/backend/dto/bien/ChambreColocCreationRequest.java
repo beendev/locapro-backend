@@ -1,14 +1,23 @@
 package com.locapro.backend.dto.bien;
 
+import com.locapro.backend.domain.context.SousType;
+
 public record ChambreColocCreationRequest(
 
-        // Identification de la chambre
+        // Identification
         String nomReferenceInterne,
         String libelleVisible,
+
+        // --- AJOUT 1 : Le type (Kot, Studio, Chambre...) ---
+        SousType sousType,
+
         String lotOuUnite,
         String numeroPorte,
         String boiteUnite,
 
-        // Détails propres à la chambre (surface, meublé, etc.)
-        DetailsSpecifiquesRequest details
+        // Détails
+        DetailsSpecifiquesRequest details,
+
+        // --- AJOUT 2 : Le proprio spécifique (Optionnel) ---
+        BienOwnershipRequest proprietaire
 ) {}

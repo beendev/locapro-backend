@@ -13,7 +13,9 @@ public record ColocationCreationRequest(
 
         // Niveau 3 : chambres locatives
         List<ChambreColocCreationRequest> chambres,
+// Le proprio de l'unité locative
+        BienOwnershipRequest proprietaire,
 
-        // Propriétaire commun
-        BienOwnershipRequest proprietaire
+        // Le proprio de l'immeuble (Optionnel, sinon on prend le même ou null)
+        BienOwnershipRequest proprietaireParent
 ) {}

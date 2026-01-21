@@ -14,7 +14,7 @@ public class BienEntity {
 
 
     // colonne renommée en DB : nom_reference -> reference_interne
-    @Column(name = "reference_interne")
+    @Column(name = "reference_interne",updatable = false)
     private String nomReference;
 
     @Column(name = "type_bien", nullable = false)
@@ -128,6 +128,8 @@ public class BienEntity {
     public String getNomReference() {
         return nomReference;
     }
+
+
 
     public void setNomReference(String nomReference) {
         this.nomReference = nomReference;

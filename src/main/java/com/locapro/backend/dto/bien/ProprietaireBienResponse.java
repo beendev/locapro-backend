@@ -21,5 +21,6 @@ public record ProprietaireBienResponse(
         String boite,
         String codePostal,
         String ville,
+        String commune,
         String pays
 ) {}

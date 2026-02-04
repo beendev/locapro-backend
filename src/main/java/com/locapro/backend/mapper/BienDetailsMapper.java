@@ -49,6 +49,8 @@ public class BienDetailsMapper {
         if(d.pebConsoKwhM2An() != null) e.setPebConsoKwhM2An(d.pebConsoKwhM2An());
         if(d.electriciteConforme() != null) e.setElectriciteConforme(d.electriciteConforme());
         if(d.qualiteSols() != null) e.setQualiteSols(d.qualiteSols());
+        if(d.pebNumero() != null) e.setPebNumero(d.pebNumero());
+        if(d.pebDateValidite() != null) e.setPebDateValidite(d.pebDateValidite());
 
         // Booleans (Équipements)
         if(d.meuble() != null) e.setMeuble(d.meuble());
@@ -143,5 +145,42 @@ public class BienDetailsMapper {
         if (d == null) return false;
         return d.numeroPlace() != null || d.longueurM() != null
                 || d.largeurM() != null || d.typePorte() != null || d.priseElectrique() != null;
+    }
+
+    // ========================================================================
+    // 5. COLOCATION (Parties communes)
+    // ========================================================================
+
+    public DetailsColocationEntity toDetailsColocationEntity(DetailsSpecifiquesRequest d, BienEntity bien) {
+        if (d == null || bien == null) return null;
+        if (!hasColocationInfo(d)) return null;
+        DetailsColocationEntity e = new DetailsColocationEntity();
+        e.setBienId(bien.getId());
+        applyColocationFields(d, e);
+        return e;
+    }
+
+    public void updateDetailsColocationEntity(DetailsSpecifiquesRequest d, DetailsColocationEntity e) {
+        if (d == null || e == null) return;
+        applyColocationFields(d, e);
+    }
+
+    private void applyColocationFields(DetailsSpecifiquesRequest d, DetailsColocationEntity e) {
+        if (d.cuisineCommune() != null) e.setCuisineCommune(d.cuisineCommune());
+        if (d.salonCommun() != null) e.setSalonCommun(d.salonCommun());
+        if (d.sdbCommune() != null) e.setSdbCommune(d.sdbCommune());
+        if (d.wcCommun() != null) e.setWcCommun(d.wcCommun());
+        if (d.buanderieCommune() != null) e.setBuanderieCommune(d.buanderieCommune());
+        if (d.jardinCommun() != null) e.setJardinCommun(d.jardinCommun());
+        if (d.terrasseCommune() != null) e.setTerrasseCommune(d.terrasseCommune());
+        if (d.descriptionCommunes() != null) e.setDescriptionCommunes(d.descriptionCommunes());
+    }
+
+    public boolean hasColocationInfo(DetailsSpecifiquesRequest d) {
+        if (d == null) return false;
+        return d.cuisineCommune() != null || d.salonCommun() != null
+                || d.sdbCommune() != null || d.wcCommun() != null
+                || d.buanderieCommune() != null || d.jardinCommun() != null
+                || d.terrasseCommune() != null || d.descriptionCommunes() != null;
     }
 }

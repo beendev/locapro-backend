@@ -60,6 +60,7 @@ public class EntrepriseServiceImpl implements EntrepriseService {
         e.setBoite(trimOrNull(req.boite()));
         e.setCodePostal(trimOrNull(req.codePostal()));
         e.setVille(trimOrNull(req.ville()));
+        e.setCommune(trimOrNull(req.commune()));
         e.setPays(trimOrNull(req.pays()));
         e.setLatitude(req.latitude());
         e.setLongitude(req.longitude());
@@ -143,6 +144,9 @@ public class EntrepriseServiceImpl implements EntrepriseService {
         if (req.ville() != null) {
             e.setVille(trimOrNull(req.ville()));
         }
+        if (req.commune() != null) {
+            e.setCommune(trimOrNull(req.commune()));
+        }
         if (req.pays() != null) {
             e.setPays(trimOrNull(req.pays()));
         }
@@ -186,6 +190,7 @@ public class EntrepriseServiceImpl implements EntrepriseService {
                 e.getBoite(),
                 e.getCodePostal(),
                 e.getVille(),
+                e.getCommune(),
                 e.getPays(),
                 e.getLatitude(),
                 e.getLongitude(),

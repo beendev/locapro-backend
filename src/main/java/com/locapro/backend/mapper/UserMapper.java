@@ -33,6 +33,7 @@ public class UserMapper {
                 entity.getBoite(),
                 entity.getCodePostal(),
                 entity.getVille(),
+                entity.getCommune(),
                 entity.getPays(),
                 entrepriseId // 👈 On ajoute juste ça à la fin !
         );

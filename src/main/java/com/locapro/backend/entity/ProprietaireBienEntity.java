@@ -69,6 +69,9 @@ public class ProprietaireBienEntity {
     @Column(name = "adresse_ville")
     private String adresseVille;
 
+    @Column(name = "adresse_commune")
+    private String adresseCommune;
+
     @Column(name = "adresse_pays")
     private String adressePays;
 
@@ -208,6 +211,14 @@ public class ProprietaireBienEntity {
 
     public void setAdresseVille(String adresseVille) {
         this.adresseVille = adresseVille;
+    }
+
+    public String getAdresseCommune() {
+        return adresseCommune;
+    }
+
+    public void setAdresseCommune(String adresseCommune) {
+        this.adresseCommune = adresseCommune;
     }
 
     public String getTelephone() {

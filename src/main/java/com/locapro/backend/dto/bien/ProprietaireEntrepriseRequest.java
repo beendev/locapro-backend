@@ -14,5 +14,6 @@ public record ProprietaireEntrepriseRequest(
         String boite,
         String codePostal,
         String ville,
+        String commune,
         String pays
 ) {}

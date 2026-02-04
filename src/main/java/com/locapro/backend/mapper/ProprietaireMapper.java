@@ -37,6 +37,7 @@ public class ProprietaireMapper {
                 lien.setAdresseBoite(currentUser.getBoite());
                 lien.setAdresseCodePostal(currentUser.getCodePostal());
                 lien.setAdresseVille(currentUser.getVille());
+                lien.setAdresseCommune(currentUser.getCommune());
                 lien.setAdressePays(currentUser.getPays());
 
                 // Date de naissance du User (si dispo)
@@ -67,6 +68,7 @@ public class ProprietaireMapper {
                     lien.setAdresseBoite(p.boite());
                     lien.setAdresseCodePostal(p.codePostal());
                     lien.setAdresseVille(p.ville());
+                    lien.setAdresseCommune(p.commune());
                     lien.setAdressePays(p.pays());
                 }
             }
@@ -88,6 +90,7 @@ public class ProprietaireMapper {
                     lien.setAdresseBoite(e.boite());
                     lien.setAdresseCodePostal(e.codePostal());
                     lien.setAdresseVille(e.ville());
+                    lien.setAdresseCommune(e.commune());
                     lien.setAdressePays(e.pays());
                 }
             }
@@ -115,6 +118,7 @@ public class ProprietaireMapper {
         lien.setAdresseBoite(null);
         lien.setAdresseCodePostal(null);
         lien.setAdresseVille(null);
+        lien.setAdresseCommune(null);
         lien.setAdressePays(null);
     }
 }

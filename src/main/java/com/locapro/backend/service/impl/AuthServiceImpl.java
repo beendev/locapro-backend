@@ -99,6 +99,7 @@ public class AuthServiceImpl implements AuthService {
         user.setBoite(safeTrim(request.boite()));
         user.setCodePostal(safeTrim(request.codePostal()));
         user.setVille(safeTrim(request.ville()));
+        user.setCommune(safeTrim(request.commune()));
 
         String pays = safeTrim(request.pays());
         if (pays == null || pays.isBlank()) {

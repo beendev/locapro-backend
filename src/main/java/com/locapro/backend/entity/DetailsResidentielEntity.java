@@ -2,6 +2,8 @@ package com.locapro.backend.entity;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "details_residentiel")
 public class DetailsResidentielEntity {
@@ -96,6 +98,14 @@ public class DetailsResidentielEntity {
 
     @Column(name = "enabled")
     private Boolean enabled = true;
+
+    @Column(name = "peb_numero")
+    private String pebNumero;
+
+    @Column(name = "peb_date_validite")
+    private java.time.LocalDate pebDateValidite;
+
+    // + Getters / Setters
 
     public Long getBienId() {
         return bienId;
@@ -335,6 +345,22 @@ public class DetailsResidentielEntity {
 
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getPebNumero() {
+        return pebNumero;
+    }
+
+    public void setPebNumero(String pebNumero) {
+        this.pebNumero = pebNumero;
+    }
+
+    public LocalDate getPebDateValidite() {
+        return pebDateValidite;
+    }
+
+    public void setPebDateValidite(LocalDate pebDateValidite) {
+        this.pebDateValidite = pebDateValidite;
     }
 
     // Getters/setters...

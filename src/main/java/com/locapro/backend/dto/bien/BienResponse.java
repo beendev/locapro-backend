@@ -17,6 +17,7 @@ public record BienResponse(
         String boiteUnite,
         String codePostal,
         String ville,
+        String commune,
         String pays,
 
         // 👇 AJOUTS ICI : Coordonnées GPS
@@ -40,5 +41,11 @@ public record BienResponse(
 
         // Propriétaires
         ProprietaireBienResponse proprietaire,
-        ProprietaireBienResponse proprietaireParent
+        ProprietaireBienResponse proprietaireParent,
+
+        String description,
+        java.math.BigDecimal revenuCadastral,
+
+        // Colocation (parties communes)
+        DetailsColocationResponse detailsColocation
 ) {}

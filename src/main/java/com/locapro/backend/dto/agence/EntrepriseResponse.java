@@ -13,6 +13,7 @@ public record EntrepriseResponse(
         String adresseBoite,
         String adresseCodePostal,
         String adresseVille,
+        String adresseCommune,
         String adressePays,
         Double adresseLatitude,
         Double adresseLongitude,

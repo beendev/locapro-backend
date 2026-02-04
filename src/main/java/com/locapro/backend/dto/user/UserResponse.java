@@ -16,6 +16,7 @@ public record UserResponse(
         String boite,
         String codePostal,
         String ville,
+        String commune,
         String pays,
 
         // 👇 AJOUT INDISPENSABLE POUR L'ONBOARDING

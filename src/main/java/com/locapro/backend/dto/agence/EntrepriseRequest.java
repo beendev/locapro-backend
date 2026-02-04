@@ -8,12 +8,13 @@ public record EntrepriseRequest(
         String iban,
         String siteWeb,
 
-        // Adresse de l’entreprise (éclatée)
+        // Adresse de l'entreprise (éclatée)
         String rue,
         String numero,
         String boite,
         String codePostal,
         String ville,
+        String commune,
         String pays,
         Double latitude,
         Double longitude

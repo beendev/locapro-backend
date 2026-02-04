@@ -68,6 +68,9 @@ public class EntrepriseEntity {
     @Column(name = "ville", nullable = false)
     private String ville;
 
+    @Column(name = "commune")
+    private String commune;
+
     @Column(name = "pays", nullable = false)
     private String pays;
 
@@ -211,6 +214,14 @@ public class EntrepriseEntity {
 
     public void setVille(String ville) {
         this.ville = ville;
+    }
+
+    public String getCommune() {
+        return commune;
+    }
+
+    public void setCommune(String commune) {
+        this.commune = commune;
     }
 
     public String getPays() {

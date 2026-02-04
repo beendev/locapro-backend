@@ -18,6 +18,7 @@ public record UpdateUserProfileRequest(
         String boite,
         String codePostal,
         String ville,
+        String commune,
         String pays,
 
 

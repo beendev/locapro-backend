@@ -12,6 +12,9 @@ public record BienInfosDeBaseRequest(
         String numeroPorte,
         String boiteUnite,
         Boolean estUniteLocative,
+        // 👇 AJOUTS
+        String description,
+        java.math.BigDecimal revenuCadastral,
 
         // Adresse du bien
         String rue,
@@ -19,6 +22,7 @@ public record BienInfosDeBaseRequest(
         String boite,
         String codePostal,
         String ville,
+        String commune,
         String pays,
         Double latitude,
         Double longitude

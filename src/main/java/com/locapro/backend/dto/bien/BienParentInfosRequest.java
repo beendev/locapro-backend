@@ -14,6 +14,7 @@ public record BienParentInfosRequest(
         String boite,
         String codePostal,
         String ville,
+        String commune,
         String pays,
         Double latitude,
         Double longitude

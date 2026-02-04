@@ -1,6 +1,7 @@
 package com.locapro.backend.entity;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -14,7 +15,7 @@ public class BienEntity {
 
 
     // colonne renommée en DB : nom_reference -> reference_interne
-    @Column(name = "reference_interne",updatable = false)
+    @Column(name = "reference_interne")
     private String nomReference;
 
     @Column(name = "type_bien", nullable = false)
@@ -85,6 +86,9 @@ public class BienEntity {
     @Column(name = "ville")
     private String ville;
 
+    @Column(name = "commune")
+    private String commune;
+
     @Column(name = "pays")
     private String pays;
 
@@ -93,6 +97,14 @@ public class BienEntity {
 
     @Column(name = "longitude")
     private Double longitude;
+
+    @Column(name = "description")
+    private String description;
+
+    @Column(name = "revenu_cadastral")
+    private BigDecimal revenuCadastral;
+
+    // + Getters / Setters
 
     @PrePersist
     public void prePersist() {
@@ -288,6 +300,14 @@ public class BienEntity {
         this.ville = ville;
     }
 
+    public String getCommune() {
+        return commune;
+    }
+
+    public void setCommune(String commune) {
+        this.commune = commune;
+    }
+
     public String getPays() {
         return pays;
     }
@@ -326,5 +346,21 @@ public class BienEntity {
 
     public void setGestionnaireUtilisateurId(Long gestionnaireUtilisateurId) {
         this.gestionnaireUtilisateurId = gestionnaireUtilisateurId;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public BigDecimal getRevenuCadastral() {
+        return revenuCadastral;
+    }
+
+    public void setRevenuCadastral(BigDecimal revenuCadastral) {
+        this.revenuCadastral = revenuCadastral;
     }
 }

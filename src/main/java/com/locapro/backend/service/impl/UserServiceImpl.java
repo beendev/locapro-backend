@@ -64,6 +64,7 @@ public class UserServiceImpl implements UserService {
         if (request.boite() != null) user.setBoite(safeTrim(request.boite()));
         if (request.codePostal() != null) user.setCodePostal(safeTrim(request.codePostal()));
         if (request.ville() != null) user.setVille(safeTrim(request.ville()));
+        if (request.commune() != null) user.setCommune(safeTrim(request.commune()));
         if (request.pays() != null) user.setPays(safeTrim(request.pays()));
 
 

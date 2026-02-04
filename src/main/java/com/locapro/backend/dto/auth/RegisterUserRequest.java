@@ -43,6 +43,7 @@ public record RegisterUserRequest(
         String boite,
         String codePostal,
         String ville,
+        String commune,
         String pays,
 
         Double latitude,

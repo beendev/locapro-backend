@@ -59,7 +59,6 @@ public class SecurityConfig {
 
         return http.build();
     }
-
     // 2. LA CONFIGURATION CORS MAGIQUE 👇
     @Bean
     CorsConfigurationSource corsConfigurationSource() {

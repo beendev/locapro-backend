@@ -31,6 +31,9 @@ public record DetailsSpecifiquesRequest(
         Boolean balcon,
         Boolean cave,
         Boolean grenier,
+        // 👇 AJOUTS
+        String pebNumero,
+        java.time.LocalDate pebDateValidite,
 
         // === Commerce ===
         Double surfaceCommercialeM2,
@@ -49,6 +52,16 @@ public record DetailsSpecifiquesRequest(
         Double longueurM,
         Double largeurM,
         String typePorte,
-        Boolean priseElectrique
+        Boolean priseElectrique,
+
+        // === Colocation (parties communes - niveau bâtiment) ===
+        Boolean cuisineCommune,
+        Boolean salonCommun,
+        Boolean sdbCommune,
+        Boolean wcCommun,
+        Boolean buanderieCommune,
+        Boolean jardinCommun,
+        Boolean terrasseCommune,
+        String descriptionCommunes
 
 ) {}

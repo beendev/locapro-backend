@@ -57,6 +57,9 @@ public class UtilisateurEntity {
     @Column(name = "ville")
     private String ville;
 
+    @Column(name = "commune")
+    private String commune;
+
     @Column(name = "pays")
     private String pays;
 
@@ -184,6 +187,14 @@ public class UtilisateurEntity {
 
     public void setVille(String ville) {
         this.ville = ville;
+    }
+
+    public String getCommune() {
+        return commune;
+    }
+
+    public void setCommune(String commune) {
+        this.commune = commune;
     }
 
     public String getPays() {

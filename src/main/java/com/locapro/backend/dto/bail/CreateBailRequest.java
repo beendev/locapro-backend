@@ -1,5 +1,6 @@
 package com.locapro.backend.dto.bail;
 
+import com.locapro.backend.domain.context.DureeBail;
 import com.locapro.backend.domain.context.LangueContrat;
 import com.locapro.backend.domain.context.RegionBail;
 import com.locapro.backend.domain.context.TypeContratBail;
@@ -23,11 +24,13 @@ public record CreateBailRequest(
         @NotNull(message = "La langue du contrat est obligatoire")
         LangueContrat langueContrat,
 
-        @NotBlank(message = "Le type de document est obligatoire (ex: BAIL_RESIDENCE_PRINCIPALE)")
-        String typeDocument,
-
         @NotNull(message = "Le type de contrat est obligatoire")
-        TypeContratBail typeContrat,
+        TypeContratBail typeContrat,  // <--- Utilise le NOUVEL Enum (RESIDENCE_PRINCIPALE...)
+
+        @NotNull(message = "La durée du contrat (catégorie) est obligatoire")
+        DureeBail dureeBail,
+        // <--- NOUVEAU CHAMP !
+
 
         @NotNull(message = "La date de début est obligatoire")
         LocalDate dateDebut,

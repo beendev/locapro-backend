@@ -8,6 +8,7 @@ import com.locapro.backend.entity.ModeleBailEntity;
 import com.locapro.backend.entity.PeriodeBailEntity;
 
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 public class BailMapper {
 
@@ -82,21 +83,47 @@ public class BailMapper {
     /**
      * Période initiale du bail
      */
-    public static PeriodeBailEntity toInitialPeriodeEntity(
-            CreateBailRequest request,
-            BailEntity bail
-    ) {
+    public static PeriodeBailEntity toInitialPeriodeEntity(CreateBailRequest request, BailEntity bail) {
         PeriodeBailEntity periode = new PeriodeBailEntity();
 
         periode.setBail(bail);
         periode.setDateDebut(request.dateDebut());
-        periode.setDateFin(request.dateFin());
+        // Si dateFin est null dans la request, on prend celle calculée dans le BailEntity
+        periode.setDateFin(bail.getDateFin());
+
         periode.setLoyerBase(request.loyerBase());
         periode.setProvisionCharges(request.provisionCharges());
-        periode.setJourEcheance(request.jourEcheance());
-        periode.setMoisIndiceBase(request.moisIndiceBase());
+
+        // --- EXTRACTION INTELLIGENTE DU TYPE DE CHARGES ---
+        // On va chercher dans le JSON: financier -> charges -> type
+        String typeCharges = "PROVISION"; // Valeur par défaut (sécurité)
+        try {
+            Map<String, Object> form = request.reponseFormulaire();
+            if (form != null && form.containsKey("financier")) {
+                Map<String, Object> financier = (Map<String, Object>) form.get("financier");
+                if (financier != null && financier.containsKey("charges")) {
+                    Map<String, Object> charges = (Map<String, Object>) financier.get("charges");
+                    if (charges != null && charges.containsKey("type")) {
+                        String type = (String) charges.get("type");
+                        if (type != null && !type.isBlank()) {
+                            typeCharges = type; // "FORFAIT" ou "PROVISION"
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Si le casting échoue ou le JSON est bizarre, on garde la valeur par défaut
+            System.err.println("Warning: Impossible d'extraire le type de charges du JSON");
+        }
+        periode.setTypeCharges(typeCharges);
+        // --------------------------------------------------
+
+        periode.setJourEcheance(request.jourEcheance() != null ? request.jourEcheance() : 1);
+        periode.setMoisIndiceBase(request.moisIndiceBase() != null ? request.moisIndiceBase() : "INCONNU");
         periode.setTypeIndice(request.typeIndice() != null ? request.typeIndice() : "SANTE");
+
         periode.setOrigine("INITIAL");
+        periode.setCreeLe(OffsetDateTime.now());
         periode.setEnabled(true);
 
         return periode;
@@ -109,6 +136,7 @@ public class BailMapper {
             BailEntity bail,
             PeriodeBailEntity periode
     ) {
+        assert periode != null;
         return new BailResponse(
                 bail.getId(),
                 bail.getNomBail(),
@@ -121,6 +149,7 @@ public class BailMapper {
                 bail.getStatut(),
                 periode.getLoyerBase(),
                 periode.getProvisionCharges(),
+                periode.getTypeCharges(),
                 periode.getJourEcheance(),
                 periode.getMoisIndiceBase(),
                 periode.getTypeIndice(),

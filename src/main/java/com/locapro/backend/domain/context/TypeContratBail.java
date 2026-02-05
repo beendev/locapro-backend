@@ -1,17 +1,24 @@
 package com.locapro.backend.domain.context;
 
 public enum TypeContratBail {
-    // Résidentiel
-    CLASSIQUE_9ANS,      // Le standard
-    COURTE_DUREE,        // 3 ans ou moins
-    A_VIE,              // Rare, mais existe
+    // 🏠 LOGEMENT PRINCIPAL (Loi sur les baux de résidence principale)
+    RESIDENCE_PRINCIPALE,
 
-    // Spécifique
-    ETUDIANT,           // Kot (règles différentes par région)
-    COLOCATION,         // Pacte de colocation
+    // 🎓 ETUDIANT (Kot - Décret spécifique par région)
+    ETUDIANT,
 
-    // Professionnel
-    COMMERCIAL,         // Commerce de détail
-    BUREAU,             // Droit commun
-    POP_UP_STORE        // Bail commercial courte durée
+    // 🤝 COLOCATION (Pacte de colocation obligatoire à BXL/WAL)
+    COLOCATION,
+
+    // 🏢 DROIT COMMUN (Résidence secondaire, pied-à-terre, bureau non-comm.)
+    DROIT_COMMUN,
+
+    // 🛍️ COMMERCIAL (Loi sur les baux commerciaux)
+    COMMERCIAL,
+
+    // 📦 POP-UP (Bail commercial de courte durée)
+    POP_UP_STORE,
+
+    // 🚗 GARAGE / PARKING (Si loué seul)
+    GARAGE
 }

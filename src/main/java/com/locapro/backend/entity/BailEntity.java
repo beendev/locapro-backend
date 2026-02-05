@@ -92,6 +92,10 @@ public class BailEntity {
     @Column(name = "type_contrat")
     private String typeContrat;
 
+    // NOUVEAU CHAMP
+    @Column(name = "duree_bail_type")
+    private String dureeBailType;
+
     // NUMERIQUE / PAPIER
     @Column(name = "source_contrat")
     private String sourceContrat;
@@ -440,5 +444,13 @@ public class BailEntity {
 
     public void setModeleBailId(Long modeleBailId) {
         this.modeleBailId = modeleBailId;
+    }
+
+    public String getDureeBailType() {
+        return dureeBailType;
+    }
+
+    public void setDureeBailType(String dureeBailType) {
+        this.dureeBailType = dureeBailType;
     }
 }

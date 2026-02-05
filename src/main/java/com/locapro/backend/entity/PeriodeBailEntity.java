@@ -66,6 +66,9 @@ public class PeriodeBailEntity {
     @Column(name = "enabled", nullable = false)
     private Boolean enabled = true;
 
+    @Column(name = "type_charges", nullable = false)
+    private String typeCharges = "PROVISION";
+
     // =======================
     // Getters / Setters
     // =======================
@@ -176,5 +179,13 @@ public class PeriodeBailEntity {
 
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getTypeCharges() {
+        return typeCharges;
+    }
+
+    public void setTypeCharges(String typeCharges) {
+        this.typeCharges = typeCharges;
     }
 }

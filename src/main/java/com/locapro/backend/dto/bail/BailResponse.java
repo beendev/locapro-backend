@@ -15,6 +15,7 @@ public record BailResponse(
         String statut,
         BigDecimal loyerBase,
         BigDecimal provisionCharges,
+        String typeCharges,
         Integer jourEcheance,
         String moisIndiceBase,
         String typeIndice,

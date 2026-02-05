@@ -75,6 +75,15 @@ public class BailEntity {
     @Column(name = "gestion_mode")
     private String gestionMode;
 
+    @Column(name = "garantie_montant")
+    private BigDecimal garantieMontant;
+
+    @Column(name = "garantie_type")
+    private String garantieType;
+
+    @Column(name = "garantie_constitu_bool")
+    private Boolean garantieConstituee = false;
+
     // =======================
     // Contrat & signature
     // =======================
@@ -160,8 +169,13 @@ public class BailEntity {
     // Getters / Setters
     // =======================
 
+
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public OffsetDateTime getCreeLe() {
@@ -276,6 +290,30 @@ public class BailEntity {
         this.gestionMode = gestionMode;
     }
 
+    public BigDecimal getGarantieMontant() {
+        return garantieMontant;
+    }
+
+    public void setGarantieMontant(BigDecimal garantieMontant) {
+        this.garantieMontant = garantieMontant;
+    }
+
+    public String getGarantieType() {
+        return garantieType;
+    }
+
+    public void setGarantieType(String garantieType) {
+        this.garantieType = garantieType;
+    }
+
+    public Boolean getGarantieConstituee() {
+        return garantieConstituee;
+    }
+
+    public void setGarantieConstituee(Boolean garantieConstituee) {
+        this.garantieConstituee = garantieConstituee;
+    }
+
     public String getTypeContrat() {
         return typeContrat;
     }
@@ -332,22 +370,6 @@ public class BailEntity {
         this.loyerReference = loyerReference;
     }
 
-    public String getReponsesBail() {
-        return reponsesBail;
-    }
-
-    public void setReponsesBail(String reponsesBail) {
-        this.reponsesBail = reponsesBail;
-    }
-
-    public Long getModeleBailId() {
-        return modeleBailId;
-    }
-
-    public void setModeleBailId(Long modeleBailId) {
-        this.modeleBailId = modeleBailId;
-    }
-
     public String getDescriptionBienSnapshot() {
         return descriptionBienSnapshot;
     }
@@ -364,8 +386,12 @@ public class BailEntity {
         this.descriptionCommunesSnapshot = descriptionCommunesSnapshot;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public String getReponsesBail() {
+        return reponsesBail;
+    }
+
+    public void setReponsesBail(String reponsesBail) {
+        this.reponsesBail = reponsesBail;
     }
 
     public String getEdlMode() {
@@ -406,5 +432,13 @@ public class BailEntity {
 
     public void setPortefeuilleId(Long portefeuilleId) {
         this.portefeuilleId = portefeuilleId;
+    }
+
+    public Long getModeleBailId() {
+        return modeleBailId;
+    }
+
+    public void setModeleBailId(Long modeleBailId) {
+        this.modeleBailId = modeleBailId;
     }
 }

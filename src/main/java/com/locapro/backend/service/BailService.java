@@ -1,8 +1,11 @@
 package com.locapro.backend.service;
 
+import com.locapro.backend.dto.bail.BailConflitResponse;
 import com.locapro.backend.dto.bail.BailResponse;
 import com.locapro.backend.dto.bail.CreateBailRequest;
 import com.locapro.backend.dto.bail.UpdateBailRequest;
+
+import java.time.LocalDate;
 
 
 public interface BailService {
@@ -12,4 +15,8 @@ public interface BailService {
     BailResponse updateBail(Long bailId, UpdateBailRequest request);
     BailResponse getBail(Long bailId);
     void deleteBail(Long bailId); // La porte de sortie
+
+    // --- LA NOUVELLE MÉTHODE À AJOUTER ---
+    BailConflitResponse verifierDisponibilite(Long bienId, LocalDate dateDebut);
+
 }

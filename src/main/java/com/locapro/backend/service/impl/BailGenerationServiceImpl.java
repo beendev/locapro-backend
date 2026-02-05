@@ -2,12 +2,17 @@ package com.locapro.backend.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.locapro.backend.domain.context.LangueContrat;
+import com.locapro.backend.domain.context.RegionBail;
+import com.locapro.backend.domain.context.TypeContratBail;
 import com.locapro.backend.entity.BailEntity;
 import com.locapro.backend.entity.BienEntity;
+import com.locapro.backend.entity.ModeleBailEntity;
 import com.locapro.backend.entity.ProprietaireBienEntity;
 import com.locapro.backend.exception.NotFoundException;
 import com.locapro.backend.repository.BailRepository;
 import com.locapro.backend.repository.BienRepository;
+import com.locapro.backend.repository.ModeleBailRepository;
 import com.locapro.backend.repository.ProprietaireBienRepository;
 import com.locapro.backend.service.BailGenerationService;
 import com.locapro.backend.utils.DocxUtils;
@@ -18,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -30,6 +36,7 @@ public class BailGenerationServiceImpl implements BailGenerationService {
     private final BailRepository bailRepository;
     private final BienRepository bienRepository;
     private final ProprietaireBienRepository proprietaireBienRepository;
+    private final ModeleBailRepository modeleBailRepository;
 
     private static final String CHECKED = "☒";
     private static final String UNCHECKED = "☐";
@@ -37,11 +44,12 @@ public class BailGenerationServiceImpl implements BailGenerationService {
     public BailGenerationServiceImpl(ObjectMapper objectMapper,
                                      BailRepository bailRepository,
                                      BienRepository bienRepository,
-                                     ProprietaireBienRepository proprietaireBienRepository) {
+                                     ProprietaireBienRepository proprietaireBienRepository, ModeleBailRepository modeleBailRepository) {
         this.objectMapper = objectMapper;
         this.bailRepository = bailRepository;
         this.bienRepository = bienRepository;
         this.proprietaireBienRepository = proprietaireBienRepository;
+        this.modeleBailRepository = modeleBailRepository;
     }
 
     @Override
@@ -66,21 +74,38 @@ public class BailGenerationServiceImpl implements BailGenerationService {
     }
 
     private byte[] genererFichierInterne(BailEntity bail, BienEntity bien, ProprietaireBienEntity proprio) throws Exception {
-        // ATTENTION : Mise à jour du nom de fichier vers le nouveau template
-        InputStream templateStream = new ClassPathResource("templates/Bail_residence_principale_TEMPLATE_docx4j.docx").getInputStream();
-        WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(templateStream);
+        // 1. Récupérer les énums
+        RegionBail region = RegionBail.valueOf(bail.getRegion());
+        TypeContratBail typeContrat = TypeContratBail.valueOf(bail.getTypeContrat());
+        LangueContrat langue = LangueContrat.valueOf(bail.getLangueContrat());
 
+        // 2. Trouver le modèle en DB (C'est ici que ça plantait avant !)
+        ModeleBailEntity modele = modeleBailRepository
+                .findFirstByRegionBailAndTypeContratAndLangueAndActifBoolTrue(region, typeContrat, langue)
+                .orElseThrow(() -> new NotFoundException(
+                        "Aucun modèle de bail actif pour : " + region + " - " + typeContrat
+                ));
+
+        // 3. Charger le fichier (Disque ou Classpath)
+        String chemin = modele.getUrlFichier();
+        InputStream templateStream;
+
+        if (chemin.startsWith("file:")) {
+            // Fichier uploadé (ex: uploads/baux/...)
+            String vraiChemin = chemin.replace("file:", "");
+            templateStream = new java.io.FileInputStream(new java.io.File(vraiChemin));
+        } else {
+            // Fichier par défaut dans le JAR
+            String vraiChemin = chemin.startsWith("classpath:") ? chemin.replace("classpath:", "") : chemin;
+            templateStream = new ClassPathResource(vraiChemin).getInputStream();
+        }
+
+        // 4. Génération Docx4j (Rien ne change ici)
+        WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(templateStream);
         JsonNode formNode = objectMapper.readTree(bail.getReponsesBail());
 
-        // --- ETAPE 1 : NETTOYAGE DES BLOCS (AVANT VariablePrepare) ---
-        // On supprime les blocs "Société"/"Personne" et "9 ans"/"Court terme"
-        // On passe l'entité 'bail' pour connaître le type de contrat
         nettoyerBlocsConditionnels(wordMLPackage, formNode, proprio, bail);
-
-        // --- ETAPE 2 : PRÉPARATION DES VARIABLES ---
         VariablePrepare.prepare(wordMLPackage);
-
-        // --- ETAPE 3 : REMPLISSAGE ---
         Map<String, String> variables = mapperDonneesBail(bail, formNode, bien, proprio);
         wordMLPackage.getMainDocumentPart().variableReplace(variables);
 

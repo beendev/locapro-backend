@@ -3,6 +3,7 @@ package com.locapro.backend.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.locapro.backend.dto.bail.BailConflitResponse;
 import com.locapro.backend.dto.bail.BailResponse;
 import com.locapro.backend.dto.bail.CreateBailRequest;
 import com.locapro.backend.dto.bail.UpdateBailRequest;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -81,11 +83,11 @@ public class BailServiceImpl implements BailService {
         ModeleBailEntity modele = modeleBailRepository
                 .findFirstByRegionBailAndTypeContratAndLangueAndActifBoolTrue(
                         request.region(),
-                        request.langueContrat(),
-                        request.typeDocument()
+                        request.typeContrat(),    // <--- On utilise l'Enum, pas la String typeDocument
+                        request.langueContrat()   // <--- On ajoute la langue qui manquait
                 )
                 .orElseThrow(() -> new NotFoundException(
-                        "Modèle introuvable pour : " + request.region() + " / " + request.langueContrat()
+                        "Modèle introuvable pour : " + request.region() + " / " + request.typeContrat() + " / " + request.langueContrat()
                 ));
 
         // --- 4. SÉRIALISATION JSON ---
@@ -176,6 +178,36 @@ public class BailServiceImpl implements BailService {
         // Attention: supprimer aussi les périodes associées (Cascade ou manuel)
         periodeBailRepository.deleteByBailId(bailId);
         bailRepository.deleteById(bailId);
+    }
+
+    @Override
+    public BailConflitResponse verifierDisponibilite(Long bienId, LocalDate dateDebutPrevue) {
+        // 1. Search for active or signing leases
+        // The repository method findByBienIdAndStatutIn must exist in BailRepository
+        List<BailEntity> bauxActifs = bailRepository.findByBienIdAndStatutIn(
+                bienId,
+                List.of("ACTIF", "EN_SIGNATURE")
+        );
+
+        if (bauxActifs.isEmpty()) {
+            return new BailConflitResponse(false, null, "Le bien est libre.");
+        }
+
+        // 2. Check dates
+        BailEntity conflit = bauxActifs.get(0);
+
+        if (dateDebutPrevue != null && conflit.getDateFin() != null) {
+            if (dateDebutPrevue.isAfter(conflit.getDateFin())) {
+                return new BailConflitResponse(false, null, "Le bien sera libre à cette date.");
+            }
+        }
+
+        String message = String.format("Un bail est déjà en cours (Fin prévue : %s)",
+                conflit.getDateFin() != null ? conflit.getDateFin().toString() : "Indéterminée"
+        );
+
+        // Ensure BailMapper.toResponse(conflit) works and returns BailResponse
+        return new BailConflitResponse(true, BailMapper.toResponse(conflit, null), message);
     }
 
     /**

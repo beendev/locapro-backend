@@ -1,6 +1,12 @@
 package com.locapro.backend.controller;
 
-import com.locapro.backend.dto.agence.*;
+import com.locapro.backend.dto.agence.AgenceRequest;
+import com.locapro.backend.dto.agence.AgenceResponse;
+import com.locapro.backend.dto.agence.AgenceInvitationResponse;
+import com.locapro.backend.dto.agence.AgencyMemberResponse;
+import com.locapro.backend.dto.agence.InviterGestionnaireRequest;
+import com.locapro.backend.dto.agence.UpdateMemberRoleRequest;
+import com.locapro.backend.dto.agence.ValidateTokenRequest;
 import com.locapro.backend.dto.common.ApiMessageResponse;
 import com.locapro.backend.security.JwtAuthFilter.UserPrincipal;
 import com.locapro.backend.service.AgenceMembreService;
@@ -134,5 +140,48 @@ public class AgenceController {
         agenceMembreService.accepterInvitationParToken(req.token(), p.id());
 
         return ResponseEntity.ok(new ApiMessageResponse("Invitation acceptée avec succès. Bienvenue dans l'équipe !"));
+    }
+
+    // ============================================
+    // GESTION DES MEMBRES
+    // ============================================
+
+    @GetMapping("/{agenceId}/members")
+    @Operation(summary = "Lister les membres de l'agence",
+            description = "Récupère la liste des membres actifs de l'agence avec leurs rôles.")
+    public ResponseEntity<List<AgencyMemberResponse>> getAgencyMembers(
+            @PathVariable Long agenceId,
+            Authentication auth
+    ) {
+        var p = (UserPrincipal) auth.getPrincipal();
+        var members = agenceMembreService.getAgencyMembers(agenceId, p.id());
+        return ResponseEntity.ok(members);
+    }
+
+    @PutMapping("/{agenceId}/members/{memberUserId}/role")
+    @Operation(summary = "Modifier le rôle d'un membre",
+            description = "Permet à un admin de modifier le rôle d'un membre de l'agence.")
+    public ResponseEntity<ApiMessageResponse> updateMemberRole(
+            @PathVariable Long agenceId,
+            @PathVariable Long memberUserId,
+            @Valid @RequestBody UpdateMemberRoleRequest request,
+            Authentication auth
+    ) {
+        var p = (UserPrincipal) auth.getPrincipal();
+        var resp = agenceMembreService.updateMemberRole(agenceId, memberUserId, request, p.id());
+        return ResponseEntity.ok(resp);
+    }
+
+    @DeleteMapping("/{agenceId}/members/{memberUserId}")
+    @Operation(summary = "Retirer un membre de l'agence",
+            description = "Permet à un admin de retirer un membre de l'agence.")
+    public ResponseEntity<ApiMessageResponse> removeMember(
+            @PathVariable Long agenceId,
+            @PathVariable Long memberUserId,
+            Authentication auth
+    ) {
+        var p = (UserPrincipal) auth.getPrincipal();
+        var resp = agenceMembreService.removeMemberFromAgency(agenceId, memberUserId, p.id());
+        return ResponseEntity.ok(resp);
     }
 }

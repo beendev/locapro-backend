@@ -5,7 +5,6 @@ import com.locapro.backend.entity.UtilisateurEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-
 import java.util.List;
 import java.util.Optional;
 
@@ -17,21 +16,24 @@ public interface UtilisateurAgenceRepository extends JpaRepository<UtilisateurAg
 
     List<UtilisateurAgenceEntity> findByUtilisateurIdAndEnabledTrue(Long utilisateurId);
 
+    boolean existsByAgence_IdAndUtilisateur_IdAndRoleDansAgence(Long agenceId, Long utilisateurId,
+            String roleDansAgence);
 
-    boolean existsByAgence_IdAndUtilisateur_IdAndRoleDansAgence(Long agenceId, Long utilisateurId, String adminAgence);
     boolean existsByAgence_IdAndUtilisateur_IdAndEnabledTrue(Long agenceId, Long utilisateurId);
 
-    Optional<UtilisateurAgenceEntity> findByAgence_IdAndUtilisateur_Id(Long id, Long id1);
+    Optional<UtilisateurAgenceEntity> findByAgence_IdAndUtilisateur_Id(Long agenceId, Long utilisateurId);
 
     boolean existsByUtilisateurIdAndAgenceIdAndEnabledTrue(Long currentUserId, Long agenceId);
+
     long countByAgenceIdAndRoleDansAgenceAndEnabledTrue(Long agenceId, String roleDansAgence);
 
     Optional<UtilisateurAgenceEntity> findByUtilisateurIdAndAgenceIdAndEnabledTrue(Long utilisateurId, Long agenceId);
 
-
-    Optional<UtilisateurAgenceEntity>  findFirstByUtilisateurIdAndEnabledTrue(Long currentUserId);
+    Optional<UtilisateurAgenceEntity> findFirstByUtilisateurIdAndEnabledTrue(Long currentUserId);
 
     boolean existsByUtilisateur_IdAndAgence_Id(Long userId, Long id);
+
+    List<UtilisateurAgenceEntity> findByAgenceIdAndEnabledTrue(Long agenceId);
 
     @Query("SELECT ua.utilisateur FROM UtilisateurAgenceEntity ua " +
             "WHERE ua.agence.id = :agenceId " +

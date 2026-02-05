@@ -16,7 +16,9 @@ import com.locapro.backend.repository.PortefeuilleMembreRepository;
 import com.locapro.backend.repository.PortefeuilleRepository;
 import com.locapro.backend.repository.UtilisateurAgenceRepository;
 import com.locapro.backend.repository.UtilisateurRepository;
+import com.locapro.backend.service.AuthorizationService;
 import com.locapro.backend.service.PortefeuilleService;
+import com.locapro.backend.domain.context.TravailContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.locapro.backend.repository.BienRepository;
@@ -39,6 +41,7 @@ public class PortefeuilleServiceImpl implements PortefeuilleService {
     private final PortefeuilleMembreMapper portefeuilleMembreMapper;
     private final BienRepository bienRepository;
     private final BienResponseMapper bienResponseMapper;
+    private final AuthorizationService authorizationService;
 
     public PortefeuilleServiceImpl(
             UtilisateurAgenceRepository utilisateurAgenceRepository,
@@ -47,7 +50,9 @@ public class PortefeuilleServiceImpl implements PortefeuilleService {
             PortefeuilleMembreRepository portefeuilleMembreRepository,
             PortefeuilleMapper portefeuilleMapper,
             PortefeuilleMembreMapper portefeuilleMembreMapper,
-            BienRepository bienRepository, BienResponseMapper bienResponseMapper
+            BienRepository bienRepository,
+            BienResponseMapper bienResponseMapper,
+            AuthorizationService authorizationService
     ) {
         this.utilisateurAgenceRepository = utilisateurAgenceRepository;
         this.utilisateurRepository = utilisateurRepository;
@@ -57,6 +62,7 @@ public class PortefeuilleServiceImpl implements PortefeuilleService {
         this.portefeuilleMembreMapper = portefeuilleMembreMapper;
         this.bienRepository = bienRepository;
         this.bienResponseMapper = bienResponseMapper;
+        this.authorizationService = authorizationService;
     }
 
     @Override
@@ -106,13 +112,31 @@ public class PortefeuilleServiceImpl implements PortefeuilleService {
     @Override
     @Transactional(readOnly = true)
     public List<PortefeuilleResponse> listerPortefeuillesAgence(Long currentUserId) {
-        // Tous les portefeuilles où je suis membre actif
+        // Récupérer l'agence de l'utilisateur
+        Long agenceId = authorizationService.resolveAgencyId(currentUserId, TravailContext.AGENCE);
+        if (agenceId == null) {
+            return List.of();
+        }
+
+        // Vérifier le rôle pour déterminer les portefeuilles visibles
+        var role = authorizationService.getUserRoleInAgency(currentUserId, agenceId);
+
+        if (role.hasFullPortfolioAccess()) {
+            // ADMIN_AGENCE et RESPONSABLE_AGENCE voient TOUS les portefeuilles de l'agence
+            return portefeuilleRepository.findByAgenceIdAndEnabledTrue(agenceId)
+                    .stream()
+                    .map(portefeuilleMapper::toResponse)
+                    .toList();
+        }
+
+        // Sinon, afficher uniquement les portefeuilles assignés
         var membres = portefeuilleMembreRepository
                 .findByUtilisateurIdAndEnabledTrue(currentUserId);
 
         return membres.stream()
                 .map(PortefeuilleMembreEntity::getPortefeuille)
                 .filter(PortefeuilleEntity::isEnabled)
+                .filter(pf -> pf.getAgence() != null && pf.getAgence().getId().equals(agenceId))
                 .map(portefeuilleMapper::toResponse)
                 .toList();
     }
@@ -357,8 +381,11 @@ public class PortefeuilleServiceImpl implements PortefeuilleService {
 
     private boolean aDroitAdminAgence(UtilisateurAgenceEntity lien) {
         String role = lien.getRoleDansAgence();
+        // ADMIN_AGENCE, RESPONSABLE_AGENCE et GESTIONNAIRE_SENIOR peuvent créer des portefeuilles
         return "ADMIN_AGENCE".equals(role)
-                || "RESPONSABLE".equals(role);  // ou "RESPONSABLE_AGENCE" selon ton enum
+                || "RESPONSABLE".equals(role)
+                || "RESPONSABLE_AGENCE".equals(role)
+                || "GESTIONNAIRE_SENIOR".equals(role);
     }
 
     private boolean aDroitAdminPortefeuille(PortefeuilleMembreEntity membre) {

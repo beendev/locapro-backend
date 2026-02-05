@@ -2,6 +2,7 @@ package com.locapro.backend.entity;
 
 import com.locapro.backend.domain.context.RegionBail;
 import com.locapro.backend.domain.context.LangueContrat;
+import com.locapro.backend.domain.context.TypeContratBail; // <--- Import Important
 
 import jakarta.persistence.*;
 import java.time.OffsetDateTime;
@@ -14,22 +15,28 @@ public class ModeleBailEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // BRUXELLES, WALLONIE, FLANDRE
     @Enumerated(EnumType.STRING)
     @Column(name = "region", nullable = false)
     private RegionBail regionBail;
 
+    // FR, NL, EN
     @Enumerated(EnumType.STRING)
     @Column(name = "langue", nullable = false)
     private LangueContrat langue;
 
-    @Column(name = "version", nullable = false)
-    private String version;
+    // C'EST ICI QU'ON CHANGE : On utilise l'Enum strict
+    // CLASSIQUE_9ANS, ETUDIANT, COLOCATION...
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type_contrat", nullable = false)
+    private TypeContratBail typeContrat;
 
-    @Column(name = "type_document", nullable = false)
-    private String typeDocument;
-
+    // "templates/baux/bruxelles_2024_v1.docx"
     @Column(name = "url_fichier", nullable = false)
     private String urlFichier;
+
+    @Column(name = "version")
+    private String version;
 
     @Column(name = "actif_bool", nullable = false)
     private Boolean actifBool = Boolean.TRUE;
@@ -39,12 +46,8 @@ public class ModeleBailEntity {
 
     @PrePersist
     public void prePersist() {
-        if (creeLe == null) {
-            creeLe = OffsetDateTime.now();
-        }
+        if (creeLe == null) creeLe = OffsetDateTime.now();
     }
-
-    // ----- GETTERS / SETTERS -----
 
     public Long getId() {
         return id;
@@ -54,11 +57,11 @@ public class ModeleBailEntity {
         this.id = id;
     }
 
-    public RegionBail getRegion() {
+    public RegionBail getRegionBail() {
         return regionBail;
     }
 
-    public void setRegion(RegionBail regionBail) {
+    public void setRegionBail(RegionBail regionBail) {
         this.regionBail = regionBail;
     }
 
@@ -70,20 +73,12 @@ public class ModeleBailEntity {
         this.langue = langue;
     }
 
-    public String getVersion() {
-        return version;
+    public TypeContratBail getTypeContrat() {
+        return typeContrat;
     }
 
-    public void setVersion(String version) {
-        this.version = version;
-    }
-
-    public String getTypeDocument() {
-        return typeDocument;
-    }
-
-    public void setTypeDocument(String typeDocument) {
-        this.typeDocument = typeDocument;
+    public void setTypeContrat(TypeContratBail typeContrat) {
+        this.typeContrat = typeContrat;
     }
 
     public String getUrlFichier() {
@@ -92,6 +87,14 @@ public class ModeleBailEntity {
 
     public void setUrlFichier(String urlFichier) {
         this.urlFichier = urlFichier;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     public Boolean getActifBool() {

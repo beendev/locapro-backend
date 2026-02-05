@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
 @Repository
 public interface PeriodeBailRepository extends JpaRepository<PeriodeBailEntity, Long> {
@@ -34,4 +35,15 @@ public interface PeriodeBailRepository extends JpaRepository<PeriodeBailEntity, 
             @Param("newStart") LocalDate newStart,
             @Param("newEnd") LocalDate newEnd
     );
+
+    // 1. Pour récupérer la période active d'un bail
+    Optional<PeriodeBailEntity> findFirstByBailId(Long bailId);
+
+    // 2. Pour la suppression (Le fameux Delete)
+    // Spring comprend "deleteBy" + "BailId" (le nom du champ)
+    void deleteByBailId(Long bailId);
+
+    // 3. Ta méthode existante pour les chevauchements (ne change pas)
+    // @Query("...") ou méthode dérivée
+    boolean existsByBienIdAndDateDebutLessThanEqualAndDateFinGreaterThanEqual(Long bienId, LocalDate fin, LocalDate debut);
 }
